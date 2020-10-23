@@ -14,7 +14,7 @@ _DISCLAIMER: The numbers in the table are not scientifically calculated, thus th
 | ------------------------ | -------- | -------- | -------------------------- | ------------ | -------- | ---------------------------------------- |
 | [Pyodide][pyodide]       | ✔        |          | Fast (1.106s - WASM)       | ~3600ms      | ~23000kB | [Most scientific libraries][pyodide-lib] |
 | [PyPy.js][pypyjs]        |          | ✔        | Very fast (0.034s - JS)    | ~1900ms      | ~15000kB | Browser                                  |
-| [Skulpt][skulpt]         | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurleGraphics                            |
+| [Skulpt][skulpt]         | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurtleGraphics                            |
 | [Brython][brython]       | ✔        |          | Slow (3.445s - JS)         | ~200ms       | ~184kB   | Browser                                  |
 | [RustPython][rustpython] | ✔        |          | Very slow (11.567s - WASM) | ~200ms       | ~184kB   | Browser                                  |
 
