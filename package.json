@@ -1,0 +1,25 @@
+{
+  "name": "client-side-python-runner",
+  "version": "0.0.0",
+  "description": "A client side Python runner wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niklasmh/client-side-python-runner.git"
+  },
+  "keywords": [
+    "python",
+    "wrapper",
+    "client-side",
+    "python-runner"
+  ],
+  "author": "Niklas Molnes Hole",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/niklasmh/client-side-python-runner/issues"
+  },
+  "homepage": "https://github.com/niklasmh/client-side-python-runner#readme"
+}
