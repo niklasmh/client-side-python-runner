@@ -11,8 +11,9 @@ Simple example:
 ```javascript
 import pythonRunner from 'client-side-python-runner';
 
-pythonRunner.runCode('print("pyodide")'); // Currently default to use pyodide
-// However, it is possible to switch to skulpt like this
+pythonRunner.runCode('print("printed from pyodide")'); // Currently defaults to use pyodide
+
+// Set the use-option to specify which engine to use
 pythonRunner.runCode('print("printed from skulpt")', {
   use: 'skulpt',
 });
@@ -39,13 +40,13 @@ pythonRunner.setOptions({
 });
 
 // Run the code
-pythonRunner.runCode('print("printed from skulpt")');
+await pythonRunner.runCode('print("printed from skulpt")');
 
 // Switch engine
 await pythonRunner.useEngine('pyodide');
 
 // Run the code again, but in pyodide
-pythonRunner.runCode('print("printed from pyodide")');
+await pythonRunner.runCode('print("printed from pyodide")');
 ```
 
 </details>
