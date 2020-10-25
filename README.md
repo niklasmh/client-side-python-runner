@@ -1,5 +1,57 @@
 # Client-side Python runner
 
+```bash
+npm i client-side-python-runner --save
+```
+
+## Usage
+
+Simple example:
+
+```javascript
+import pythonRunner from 'client-side-python-runner';
+
+pythonRunner.runCode('print("pyodide")'); // Currently default to use pyodide
+// However, it is possible to switch to skulpt like this
+pythonRunner.runCode('print("printed from skulpt")', {
+  use: 'skulpt',
+});
+```
+
+<details>
+<summary>Advanced example</summary>
+
+This will probably be more advanced in the future.
+
+```javascript
+import pythonRunner from 'client-side-python-runner';
+
+// Load engines on beforehand
+await pythonRunner.loadEngines(['pyodide', 'skulpt]);
+
+// Set current engine
+await pythonRunner.useEngine('skulpt');
+
+// Set options (this will merge with existing options)
+pythonRunner.setOptions({
+  output: console.log,
+  input: prompt,
+});
+
+// Run the code
+pythonRunner.runCode('print("printed from skulpt")');
+
+// Switch engine
+await pythonRunner.useEngine('pyodide');
+
+// Run the code again, but in pyodide
+pythonRunner.runCode('print("printed from pyodide")');
+```
+
+</details>
+
+## Why
+
 There are a lot of client-side Python runners out there, and they all have [benefits and disadvantages](https://stromberg.dnsalias.org/~strombrg/pybrowser/python-browser.html). Some can take a lot of loading time, and others are missing libraries you need (e.g. `numpy`) as well as core functionality (e.g. `time.sleep`). This package joins a few of the alternatives giving you the freedom to easily choose what you want in your project right now - without having to do major changes in your code. It also allows for using multiple interpreters at the same time!
 
 Another benefit with using this library is that it can adapt to new Python runners that comes along. The world has just started with exploring the capabilities with Web Assembly (WASM) meaning there will be a lot of trial and error before we find an optimal solution. So far, Pyodide has done a pretty thorough job with this, but other versions like Skulpt loads much faster which - depending on your project - could be an essential factor.
@@ -14,7 +66,7 @@ _DISCLAIMER: The numbers in the table are not scientifically calculated, thus th
 | ------------------------ | -------- | -------- | -------------------------- | ------------ | -------- | ---------------------------------------- |
 | [Pyodide][pyodide]       | ✔        |          | Fast (1.106s - WASM)       | ~3600ms      | ~23000kB | [Most scientific libraries][pyodide-lib] |
 | [PyPy.js][pypyjs]        |          | ✔        | Very fast (0.034s - JS)    | ~1900ms      | ~15000kB | Browser                                  |
-| [Skulpt][skulpt]         | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurtleGraphics                            |
+| [Skulpt][skulpt]         | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurtleGraphics                           |
 | [Brython][brython]       | ✔        |          | Slow (3.445s - JS)         | ~200ms       | ~184kB   | Browser                                  |
 | [RustPython][rustpython] | ✔        |          | Very slow (11.567s - WASM) | ~200ms       | ~184kB   | Browser                                  |
 
@@ -55,13 +107,13 @@ As you may have noticed, this project is still in progress. It may not be comple
 
 ## First release
 
-- [ ] Decide which Python runner to include. So far it looks like Pyodide, Skulpt. When these are added, it will be easier to include others later.
-- [ ] Decide upon how the interface should work. E.g. one would probably need a run function, some way to output results and handle errors. What about loading libraries or manipulating DOM elements?
-- [ ] Publish the project as an NPM package. Then we are done with the first release!
+- [x] Decide which Python runner to include. So far it looks like Pyodide, Skulpt. When these are added, it will be easier to include others later.
+- [x] Decide upon how the interface should work. E.g. one would probably need a run function, some way to output results and handle errors. What about loading libraries or manipulating DOM elements?
+- [x] Publish the project as an NPM package. Then we are done with the first release!
 
 ## Later
 
 - [ ] Include more Python runners.
-- [ ] Create examples of usage.
-- [ ] Lazy loading Python runners - because this is probably not something you want to deal with until you actually want to run the Python code.
+- [x] Create examples of usage.
+- [x] Lazy loading Python runners - because this is probably not something you want to deal with until you actually want to run the Python code.
 - [ ] Make it possible to run them offline (by building them into the project somehow)
