@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "description": "A client side Python runner wrapper",
   "main": "index.js",
-  "scripts": {
-    "test": "npm test"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/niklasmh/client-side-python-runner.git"
@@ -16,7 +13,7 @@
     "client-side",
     "python-runner"
   ],
-  "author": "Niklas Molnes Hole",
+  "author": "Niklas Molnes Hole <nikasmh@hotmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/niklasmh/client-side-python-runner/issues"
