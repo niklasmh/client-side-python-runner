@@ -28,7 +28,7 @@ This will probably be more advanced in the future.
 import pythonRunner from 'client-side-python-runner';
 
 // Load engines on beforehand
-await pythonRunner.loadEngines(['pyodide', 'skulpt]);
+await pythonRunner.loadEngines(['pyodide', 'skulpt']);
 
 // Set current engine
 await pythonRunner.useEngine('skulpt');
