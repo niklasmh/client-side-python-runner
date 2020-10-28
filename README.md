@@ -11,9 +11,10 @@ Simple example:
 ```javascript
 import pythonRunner from 'client-side-python-runner';
 
-pythonRunner.runCode('print("printed from pyodide")'); // Currently defaults to use pyodide
+// Run any Python code (runs using pyodide by default)
+pythonRunner.runCode('print("printed from pyodide")'); // This is an async operation. It will load the pyodide Python runner here if it has not been loaded yet.
 
-// Set the use-option to specify which engine to use
+// Set the use-option to specify which engine to use (if you do not want to rely on the current default engine)
 pythonRunner.runCode('print("printed from skulpt")', {
   use: 'skulpt',
 });
@@ -37,6 +38,7 @@ await pythonRunner.useEngine('skulpt');
 pythonRunner.setOptions({
   output: console.log,
   input: prompt,
+  pythonVersion: 3, // Version 3 is default, unless it is not possible using the current engine
 });
 
 // Run the code
@@ -45,8 +47,10 @@ await pythonRunner.runCode('print("printed from skulpt")');
 // Switch engine
 await pythonRunner.useEngine('pyodide');
 
-// Run the code again, but in pyodide
-await pythonRunner.runCode('print("printed from pyodide")');
+// Run the code again, but in pyodide (which also can return the result from the last execution)
+const pyodideResult = await pythonRunner.runCode(
+  'print("printed from pyodide")\n"this is the returned value"'
+);
 ```
 
 </details>
@@ -65,7 +69,7 @@ _DISCLAIMER: The numbers in the table are not scientifically calculated, thus th
 
 | Python runner            | Python 3 | Python 2 | Computation\*              | Loading time | Memory   | Packages                                 |
 | ------------------------ | -------- | -------- | -------------------------- | ------------ | -------- | ---------------------------------------- |
-| [Pyodide][pyodide]       | ✔        |          | Fast (1.106s - WASM)       | ~3600ms      | ~23000kB | [Most scientific libraries][pyodide-lib] |
+| [Pyodide][pyodide]       | ✔        |          | Fast (1.106s - WASM)       | ~1750ms      | ~7400kB  | [Most scientific libraries][pyodide-lib] |
 | [PyPy.js][pypyjs]        |          | ✔        | Very fast (0.034s - JS)    | ~1900ms      | ~15000kB | Browser                                  |
 | [Skulpt][skulpt]         | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurtleGraphics                           |
 | [Brython][brython]       | ✔        |          | Slow (3.445s - JS)         | ~200ms       | ~184kB   | Browser                                  |
