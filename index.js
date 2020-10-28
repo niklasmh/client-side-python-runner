@@ -12,6 +12,7 @@ window.pythonRunner = window.pythonRunner || {
     output: console.log,
     error: console.error,
     input: window.prompt,
+    pythonVersion: 3,
   },
 };
 
@@ -20,7 +21,15 @@ window.pythonRunner.hasEngine = function (engine) {
 };
 
 window.pythonRunner.setOptions = function (options) {
-  window.pythonRunner.options = { ...window.pythonRunner.options, options };
+  if ('pythonVersion' in options) {
+    if ('skulpt' in pythonRunner.loadedEngines) {
+      window.Sk.configure({
+        __future__:
+          options.pythonVersion === 2 ? window.Sk.python2 : window.Sk.python3,
+      });
+    }
+  }
+  window.pythonRunner.options = { ...window.pythonRunner.options, ...options };
 };
 
 window.pythonRunner.useEngine = async function (engine) {
@@ -157,9 +166,6 @@ window.pythonRunner.loadEngine = async function (engine) {
           throw "File not found: '" + x + "'";
         return window.Sk.builtinFiles['files'][x];
       }
-      var mypre = document.getElementById('output');
-      mypre.innerHTML = '';
-      window.Sk.pre = 'output';
 
       window.pythonRunner.loadedEngines[engine] = {
         engine,
@@ -174,6 +180,10 @@ window.pythonRunner.loadEngine = async function (engine) {
             window.Sk.configure({
               output: window.pythonRunner.options.output,
               read: builtinRead,
+              __future__:
+                window.pythonRunner.pythonVersion === 2
+                  ? window.Sk.python2
+                  : window.Sk.python3,
             });
             try {
               await window.Sk.importMainWithBody('<stdin>', false, code);
