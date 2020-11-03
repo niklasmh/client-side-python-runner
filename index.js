@@ -225,4 +225,8 @@ window.pythonRunner.runCode = async function (code, userOptions = {}) {
 
 const pythonRunner = window.pythonRunner;
 
+export const runCode = window.pythonRunner.runCode;
+export const loadEngine = window.pythonRunner.loadEngine;
+export const setOptions = window.pythonRunner.setOptions;
+
 export default pythonRunner;
