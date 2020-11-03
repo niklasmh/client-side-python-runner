@@ -1,12 +1,17 @@
-import pythonRunner from '../../index.js';
+import pythonRunner, { runCode, setOptions } from '../../index.js';
 
 //pythonRunner.loadEngine('pyodide');
 //pythonRunner.useEngine('pyodide');
-/** /
-pythonRunner.setOptions({
-  output: console.log,
+pythonRunner.debug = true;
+
+setOptions({
+  output: (arg) => {
+    document.getElementById('output').innerText += arg;
+  },
   input: prompt,
 });
-/**/
-pythonRunner.runCode('print("pyodide")');
-pythonRunner.runCode('print("skulpt")', { use: 'skulpt' });
+
+Promise.all([
+  runCode('print("pyodide!!!")'),
+  runCode('print("skulpt!!!")', { use: 'skulpt' }),
+]);
