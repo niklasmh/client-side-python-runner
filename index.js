@@ -176,7 +176,7 @@ window.pythonRunner.loadEngine = async function (engine) {
               window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})
             ).target = options.canvas;
           }
-          return await new Promise(async (resolve, reject) => {
+          await new Promise(async (resolve, reject) => {
             window.Sk.configure({
               output: window.pythonRunner.options.output,
               read: builtinRead,
@@ -192,6 +192,7 @@ window.pythonRunner.loadEngine = async function (engine) {
               reject(err.toString());
             }
           });
+          // Should not return anything
         },
       };
       if (window.pythonRunner.debug)
