@@ -1,5 +1,7 @@
 # Client-side Python runner
 
+Supported python runners so far: Pyodide, Skulpt
+
 ```bash
 npm i client-side-python-runner --save
 ```
@@ -12,9 +14,16 @@ Simple example:
 import pythonRunner from 'client-side-python-runner';
 
 // Run any Python code (runs using pyodide by default)
-pythonRunner.runCode('print("printed from pyodide")'); // This is an async operation. It will load the pyodide Python runner here if it has not been loaded yet.
+// This is an async operation. It will load the pyodide
+// Python runner here if it has not been loaded yet. Then
+// it will run the code. If you are using pyodide as
+// engine, it will also return the result from the last
+// line.
+pythonRunner.runCode('print("printed from pyodide")');
 
-// Set the use-option to specify which engine to use (if you do not want to rely on the current default engine)
+// Set the use-option to specify which engine to use (if
+// you do not want to rely on the current or default
+// engine)
 pythonRunner.runCode('print("printed from skulpt")', {
   use: 'skulpt',
 });
@@ -36,9 +45,19 @@ await pythonRunner.useEngine('skulpt');
 
 // Set options (this will merge with existing options)
 pythonRunner.setOptions({
+  // This represents the values returned from the print
+  // function in Python.
   output: console.log,
+
+  // Some engines can stop and wait for input, others
+  // cannot. To be safe, prompt is the default as it
+  // stops JavaScript altogether and thereforeworks on
+  // all cases.
   input: prompt,
-  pythonVersion: 3, // Version 3 is default, unless it is not possible using the current engine
+
+  // Version 3 is default, unless it is not possible
+  // using the current engine
+  pythonVersion: 3,
 });
 
 // Run the code
@@ -47,10 +66,14 @@ await pythonRunner.runCode('print("printed from skulpt")');
 // Switch engine
 await pythonRunner.useEngine('pyodide');
 
-// Run the code again, but in pyodide (which also can return the result from the last execution)
-const pyodideResult = await pythonRunner.runCode(
-  'print("printed from pyodide")\n"this is the returned value"'
-);
+// Run the code again, but in pyodide (which also can
+// return the result from the last execution)
+const pyodideResult = await pythonRunner.runCode(`
+a = 1200
+b = 137
+print("printed from pyodide")
+"this is the returned value " + str(a + b)
+`);
 ```
 
 </details>
