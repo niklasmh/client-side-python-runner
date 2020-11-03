@@ -11,7 +11,7 @@ npm i client-side-python-runner --save
 Simple example:
 
 ```javascript
-import pythonRunner from 'client-side-python-runner';
+import { runCode } from 'client-side-python-runner';
 
 // Run any Python code (runs using pyodide by default)
 // This is an async operation. It will load the pyodide
@@ -19,9 +19,9 @@ import pythonRunner from 'client-side-python-runner';
 // it will run the code. If you are using pyodide as
 // engine, it will also return the result from the last
 // line.
-pythonRunner
-  .runCode('print("printed from pyodide")\n1337')
-  .then((result) => console.log('Result from last line: ' + result));
+runCode('print("printed from pyodide")\n1337').then((result) =>
+  console.log('Result from last line: ' + result)
+);
 // Output:
 // > printed from pyodide
 // > Result from last line: 1337
@@ -29,7 +29,7 @@ pythonRunner
 // Set the use-option to specify which engine to use (if
 // you do not want to rely on the current or default
 // engine)
-pythonRunner.runCode('print("printed from skulpt")', {
+runCode('print("printed from skulpt")', {
   use: 'skulpt',
 });
 // Output:
