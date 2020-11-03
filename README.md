@@ -19,7 +19,12 @@ import pythonRunner from 'client-side-python-runner';
 // it will run the code. If you are using pyodide as
 // engine, it will also return the result from the last
 // line.
-pythonRunner.runCode('print("printed from pyodide")');
+pythonRunner
+  .runCode('print("printed from pyodide")\n1337')
+  .then((result) => console.log('Result from last line: ' + result));
+// Output:
+// > printed from pyodide
+// > Result from last line: 1337
 
 // Set the use-option to specify which engine to use (if
 // you do not want to rely on the current or default
@@ -27,6 +32,8 @@ pythonRunner.runCode('print("printed from pyodide")');
 pythonRunner.runCode('print("printed from skulpt")', {
   use: 'skulpt',
 });
+// Output:
+// > printed from skulpt
 ```
 
 <details>
