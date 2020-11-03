@@ -6,7 +6,7 @@ const log = function (input, color = '#aaa', style = 'font-weight:bold') {
 window.pythonRunner = window.pythonRunner || {
   loadedEngines: {},
   loadingScripts: {},
-  debug: true,
+  debug: false, // Turn on logging of important actions
   currentEngine: defaultPythonEngine,
   options: {
     output: console.log,
