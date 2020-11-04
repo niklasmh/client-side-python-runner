@@ -11,9 +11,16 @@ npm i client-side-python-runner --save
 Simple example:
 
 ```javascript
-import { runCode } from 'client-side-python-runner';
+import { runCode, setOptions } from 'client-side-python-runner';
 
-// Run any Python code (runs using pyodide by default)
+setOptions({
+  output: console.log, // Default
+  error: false, // Throws an exeption unless this is set to a function
+  input: prompt, // Default
+  pythonVersion: 3, // Default
+});
+
+// Run any Python code (runs using pyodide by default).
 // This is an async operation. It will load the pyodide
 // Python runner here if it has not been loaded yet. Then
 // it will run the code. If you are using pyodide as
@@ -42,7 +49,7 @@ runCode('print("printed from skulpt")', {
 This will probably be more advanced in the future.
 
 ```javascript
-import pythonRunner from 'client-side-python-runner';
+import pythonRunner, { runCode } from 'client-side-python-runner';
 
 // Load engines on beforehand
 await pythonRunner.loadEngines(['pyodide', 'skulpt']);
@@ -68,14 +75,14 @@ pythonRunner.setOptions({
 });
 
 // Run the code
-await pythonRunner.runCode('print("printed from skulpt")');
+await runCode('print("printed from skulpt")');
 
 // Switch engine
 await pythonRunner.useEngine('pyodide');
 
 // Run the code again, but in pyodide (which also can
 // return the result from the last execution)
-const pyodideResult = await pythonRunner.runCode(`
+const pyodideResult = await runCode(`
 a = 1200
 b = 137
 print("printed from pyodide")
@@ -140,15 +147,16 @@ f(100000)
 
 As you may have noticed, this project is still in progress. It may not be complete until late 2021, but I will attempt to deliver a working version ASAP - such that it is possible to get feedback and evaluate if this actually could be a useful project. However, until any version is released, a few things needs to be done:
 
-## First release
+## First release (1.0.0)
 
 - [x] Decide which Python runner to include. So far it looks like Pyodide, Skulpt. When these are added, it will be easier to include others later.
 - [x] Decide upon how the interface should work. E.g. one would probably need a run function, some way to output results and handle errors. What about loading libraries or manipulating DOM elements?
 - [x] Publish the project as an NPM package. Then we are done with the first release!
+- [x] Create examples of usage.
+- [x] Lazy loading Python runners - because this is probably not something you want to deal with until you actually want to run the Python code.
 
 ## Later
 
+- [ ] Return consistent error messages across all engines as well as extract line and column numbers. This is essential feedback to users.
 - [ ] Include more Python runners.
-- [x] Create examples of usage.
-- [x] Lazy loading Python runners - because this is probably not something you want to deal with until you actually want to run the Python code.
 - [ ] Make it possible to run them offline (by building them into the project somehow)
