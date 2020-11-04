@@ -10,7 +10,7 @@ window.pythonRunner = window.pythonRunner || {
   currentEngine: defaultPythonEngine,
   options: {
     output: console.log,
-    error: console.error,
+    error: false,
     input: window.prompt,
     pythonVersion: 3,
   },
@@ -141,7 +141,15 @@ window.pythonRunner.loadEngine = async function (engine) {
         engine,
         pyodide: window.pyodide,
         runCode: async (code, options = {}) => {
-          return window.pyodide.runPython(code);
+          try {
+            return window.pyodide.runPython(code);
+          } catch (ex) {
+            if (typeof window.pythonRunner.options.error === 'function') {
+              window.pythonRunner.options.error(ex);
+            } else {
+              throw ex;
+            }
+          }
         },
       };
       if (window.pythonRunner.debug)
@@ -176,22 +184,30 @@ window.pythonRunner.loadEngine = async function (engine) {
               window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})
             ).target = options.canvas;
           }
-          await new Promise(async (resolve, reject) => {
-            window.Sk.configure({
-              output: window.pythonRunner.options.output,
-              read: builtinRead,
-              __future__:
-                window.pythonRunner.pythonVersion === 2
-                  ? window.Sk.python2
-                  : window.Sk.python3,
+          try {
+            await new Promise(async (resolve, reject) => {
+              window.Sk.configure({
+                output: window.pythonRunner.options.output,
+                read: builtinRead,
+                __future__:
+                  window.pythonRunner.pythonVersion === 2
+                    ? window.Sk.python2
+                    : window.Sk.python3,
+              });
+              try {
+                await window.Sk.importMainWithBody('<stdin>', false, code);
+                resolve();
+              } catch (err) {
+                reject(err.toString());
+              }
             });
-            try {
-              await window.Sk.importMainWithBody('<stdin>', false, code);
-              resolve();
-            } catch (err) {
-              reject(err.toString());
+          } catch (ex) {
+            if (typeof window.pythonRunner.options.error === 'function') {
+              window.pythonRunner.options.error(ex);
+            } else {
+              throw ex;
             }
-          });
+          }
           // Should not return anything
         },
       };
@@ -226,8 +242,9 @@ window.pythonRunner.runCode = async function (code, userOptions = {}) {
 
 const pythonRunner = window.pythonRunner;
 
-export const runCode = window.pythonRunner.runCode;
-export const loadEngine = window.pythonRunner.loadEngine;
-export const setOptions = window.pythonRunner.setOptions;
+export const useEngine = pythonRunner.useEngine;
+export const loadEngine = pythonRunner.loadEngine;
+export const runCode = pythonRunner.runCode;
+export const setOptions = pythonRunner.setOptions;
 
 export default pythonRunner;
