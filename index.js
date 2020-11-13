@@ -1,23 +1,32 @@
 const defaultPythonEngine = 'pyodide';
-const log = function (input, color = '#aaa', style = 'font-weight:bold') {
-  console.log('%c' + input, `color:${color};${style}`);
-};
 
 window.pythonRunner = window.pythonRunner || {
   loadedEngines: {},
+  loadingEngines: {},
   loadingScripts: {},
   debug: false, // Turn on logging of important actions
+  debugFunction: null,
   currentEngine: defaultPythonEngine,
   options: {
     output: console.log,
-    error: false,
+    error: null,
     input: window.prompt,
     pythonVersion: 3,
   },
 };
 
+const log = function (input, color = '#aaa', style = 'font-weight:bold') {
+  console.log('%c' + input, `color:${color};${style}`);
+  if (window.pythonRunner.debugFunction)
+    window.pythonRunner.debugFunction(input + '\n');
+};
+
 window.pythonRunner.hasEngine = function (engine) {
   return engine in window.pythonRunner.loadedEngines;
+};
+
+window.pythonRunner.isLoadingEngine = function (engine) {
+  return engine in window.pythonRunner.loadingEngines;
 };
 
 window.pythonRunner.setOptions = function (options) {
@@ -76,17 +85,39 @@ async function loadScript(url, timeout = 20000) {
   });
 }
 
+async function untilTheEngineIsLoaded(engine) {
+  if (!window.pythonRunner.loadedEngines[engine]) {
+    return await new Promise((resolve, reject) => {
+      window.pythonRunner.loadingEngines[engine].push((couldNotLoad) => {
+        if (couldNotLoad) reject();
+        else resolve();
+      });
+    });
+  } else {
+    return;
+  }
+}
+
 window.pythonRunner.loadEngine = async function (engine) {
   if (window.pythonRunner.debug) log('Loading ' + engine + '...');
-  if (window.pythonRunner.hasEngine(engine)) return null;
+  if (window.pythonRunner.hasEngine(engine)) return true;
+  if (window.pythonRunner.isLoadingEngine(engine)) {
+    try {
+      await untilTheEngineIsLoaded(engine);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
 
   switch (engine) {
     case 'pyodide':
+      window.pythonRunner.loadingEngines.pyodide = [];
       const scriptWasLoaded = await loadScript(
         'https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js'
       );
 
-      if (!scriptWasLoaded) return null;
+      if (!scriptWasLoaded) return false;
 
       await window.languagePluginLoader;
 
@@ -154,9 +185,13 @@ window.pythonRunner.loadEngine = async function (engine) {
       };
       if (window.pythonRunner.debug)
         log('Successfully loaded ' + engine + '!', 'lime');
-      return window.pythonRunner.loadedEngines[engine];
-
+      for (let job of window.pythonRunner.loadingEngines[engine]) {
+        await job();
+      }
+      delete window.pythonRunner.loadingEngines[engine];
+      return true;
     case 'skulpt':
+      window.pythonRunner.loadingEngines.skulpt = [];
       const script1WasLoaded = await loadScript(
         'http://www.skulpt.org/js/skulpt.min.js'
       );
@@ -164,7 +199,7 @@ window.pythonRunner.loadEngine = async function (engine) {
         'http://www.skulpt.org/js/skulpt-stdlib.js'
       );
 
-      if (!script1WasLoaded || !script2WasLoaded) return null;
+      if (!script1WasLoaded || !script2WasLoaded) return false;
 
       function builtinRead(x) {
         if (
@@ -213,11 +248,15 @@ window.pythonRunner.loadEngine = async function (engine) {
       };
       if (window.pythonRunner.debug)
         log('Successfully loaded ' + engine + '!', 'lime');
-      return window.pythonRunner.loadedEngines[engine];
+      for (let job of window.pythonRunner.loadingEngines[engine]) {
+        await job();
+      }
+      delete window.pythonRunner.loadingEngines[engine];
+      return true;
 
     default:
-      if (window.pythonRunner.debug) log('Could not load ' + engine);
-      return null;
+      if (window.pythonRunner.debug) log('Could not find ' + engine);
+      return false;
   }
 };
 

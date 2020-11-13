@@ -15,7 +15,7 @@ import { runCode, setOptions } from 'client-side-python-runner';
 
 setOptions({
   output: console.log, // Default
-  error: false, // Throws an exeption unless this is set to a function
+  error: null, // Throws an exception unless this is set to a function
   input: prompt, // Default
   pythonVersion: 3, // Default
 });
@@ -145,7 +145,7 @@ f(100000)
 
 # Plan
 
-As you may have noticed, this project is still in progress. It may not be complete until late 2021, but I will attempt to deliver a working version ASAP - such that it is possible to get feedback and evaluate if this actually could be a useful project. However, until any version is released, a few things needs to be done:
+As you may have noticed, this project is still in progress. It may not be complete until late 2021, but I will attempt to deliver a working version ASAP - such that it is possible to get feedback and evaluate if this actually could be a useful project.
 
 ## First release (1.0.0)
 
@@ -155,8 +155,13 @@ As you may have noticed, this project is still in progress. It may not be comple
 - [x] Create examples of usage.
 - [x] Lazy loading Python runners - because this is probably not something you want to deal with until you actually want to run the Python code.
 
+### Fixed bugs (1.0.1)
+
+- [x] Running code again before the engine has loaded leads to an error as it failes to load multiple times in a row. Resolved by adding the awaiting code to a queue, then execute them in order when the engine is ready.
+
 ## Later
 
 - [ ] Return consistent error messages across all engines as well as extract line and column numbers. This is essential feedback to users.
 - [ ] Include more Python runners.
 - [ ] Make it possible to run them offline (by building them into the project somehow)
+- [ ] Add portals between JavaScript and Python. Useful for executing functions outside the Python scope and the other way around (if possible).
