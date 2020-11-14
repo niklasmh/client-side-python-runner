@@ -98,6 +98,79 @@ async function untilTheEngineIsLoaded(engine) {
   }
 }
 
+function interperetErrorMessage(error, code, engine) {
+  const codeLines = code.split('\n');
+
+  let type = null;
+  let message = null;
+  let line = null;
+  let lineNumber = null;
+  let columnNumber = null;
+
+  if (engine === 'pyodide') {
+    const lines = error.message.trim().split('\n');
+    const lastLine = lines.pop();
+
+    // Get error type
+    [type, ...message] = lastLine.split(': ');
+    message = message.join(': ');
+
+    // Get context information if it exists
+    const secondLastLine = lines.pop();
+    if (/ +\^/.test(secondLastLine)) {
+      // We now know the line above has line information
+      const thirdLastLine = lines.pop();
+      columnNumber = thirdLastLine.length - 4;
+
+      // We can also now get line number
+      const fourthLastLine = lines.pop();
+      const extractLineNumber = new RegExp('line ([0-9]+)');
+      try {
+        lineNumber = parseInt(extractLineNumber.exec(fourthLastLine)[1]);
+
+        // As we now have the line number we can get the line too
+        line = codeLines[lineNumber - 1];
+      } catch (ex) {}
+    } else {
+      const extractLineNumber = new RegExp('line ([0-9]+)');
+      try {
+        lineNumber = parseInt(extractLineNumber.exec(secondLastLine)[1]);
+
+        // As we now have the line number we can get the line too
+        line = codeLines[lineNumber - 1];
+      } catch (ex) {}
+    }
+  } else if (engine === 'skulpt') {
+    // Get error type
+    [type, ...message] = error.split(': ');
+    message = message.join(': ');
+
+    try {
+      const lineInfo = message.split(' on line ')[1];
+      const extractLineNumber = new RegExp('^([0-9]+)');
+      lineNumber = parseInt(extractLineNumber.exec(lineInfo)[1]);
+
+      // As we now have the line number we can get the line too
+      line = codeLines[lineNumber - 1];
+    } catch (ex) {}
+  }
+
+  return {
+    error,
+    type,
+    message,
+    line,
+    lineNumber,
+    columnNumber,
+    getNLinesAbove: (n) =>
+      lineNumber === null
+        ? []
+        : codeLines.slice(lineNumber - 1 - n, lineNumber - 1),
+    getNLinesBelow: (n) =>
+      lineNumber === null ? [] : codeLines.slice(lineNumber, lineNumber + n),
+  };
+}
+
 window.pythonRunner.loadEngine = async function (engine) {
   if (window.pythonRunner.debug) log('Loading ' + engine + '...');
   if (window.pythonRunner.hasEngine(engine)) return true;
@@ -176,9 +249,11 @@ window.pythonRunner.loadEngine = async function (engine) {
             return window.pyodide.runPython(code);
           } catch (ex) {
             if (typeof window.pythonRunner.options.error === 'function') {
-              window.pythonRunner.options.error(ex);
+              window.pythonRunner.options.error(
+                interperetErrorMessage(ex, code, engine)
+              );
             } else {
-              throw ex;
+              throw interperetErrorMessage(ex, code, engine);
             }
           }
         },
@@ -238,9 +313,11 @@ window.pythonRunner.loadEngine = async function (engine) {
             });
           } catch (ex) {
             if (typeof window.pythonRunner.options.error === 'function') {
-              window.pythonRunner.options.error(ex);
+              window.pythonRunner.options.error(
+                interperetErrorMessage(ex, code, engine)
+              );
             } else {
-              throw ex;
+              throw interperetErrorMessage(ex, code, engine);
             }
           }
           // Should not return anything
