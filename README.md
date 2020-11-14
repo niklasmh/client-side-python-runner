@@ -129,7 +129,7 @@ window.pyodide.runPython("print('I am using pyodide directly instead')");
 
 There are a lot of client-side Python runners out there, and they all have [benefits and disadvantages](https://stromberg.dnsalias.org/~strombrg/pybrowser/python-browser.html). Some can take a lot of loading time, and others are missing libraries you need (e.g. `numpy`) as well as core functionality (e.g. `time.sleep`). This package joins a few of the alternatives giving you the freedom to easily choose what you want in your project right now - without having to do major changes in your code. It also allows for using multiple interpreters at the same time!
 
-Another benefit with using this library is that it can adapt to new Python runners that comes along. The world has just started with exploring the capabilities with Web Assembly (WASM) meaning there will be a lot of trial and error before we find an optimal solution. So far, Pyodide has done a pretty thorough job with this, but other versions like Skulpt loads much faster which - depending on your project - could be an essential factor.
+Another benefit with using this library is that it can adapt to new Python runners that comes along. The world has just started with exploring the capabilities with Web Assembly (WASM) meaning there will come potentially more optimal soultions out there soon. However, so far, Pyodide has done a pretty thorough job with this, but other engines like Skulpt (not WASM) still loads much faster which - depending on your project - could be an essential factor.
 
 ## Map of different Python runners
 
@@ -198,7 +198,7 @@ As you may have noticed, this project is still in progress. It may not be fully 
 
 #### Added features
 
-- [x] Return consistent error messages across all engines as well as extract line and column (if possible) numbers. This is essential feedback to users.
+- [x] Return consistent error messages across all engines as well as extract line and column numbers (if possible). This is essential feedback to users.
 
 ## Later
 
