@@ -1,46 +1,52 @@
 # Client-side Python runner
 
-Supported python runners so far: Pyodide, Skulpt
+Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt]
 
 ```bash
 npm i client-side-python-runner --save
+# OR
+yarn add client-side-python-runner
 ```
 
 ## Usage
 
-Simple example:
+Pyodide example:
 
 ```javascript
-import { runCode, setOptions } from 'client-side-python-runner';
+import { runCode } from 'client-side-python-runner';
 
-setOptions({
-  output: console.log, // Default
-  error: null, // Throws an exception unless this is set to a function
-  input: prompt, // Default
-  pythonVersion: 3, // Default
-});
-
-// Run any Python code (runs using pyodide by default).
-// This is an async operation. It will load the pyodide
-// Python runner here if it has not been loaded yet. Then
-// it will run the code. If you are using pyodide as
-// engine, it will also return the result from the last
-// line.
+// Run any Python code (runs using pyodide by default):
 runCode('print("printed from pyodide")\n1337').then((result) =>
-  console.log('Result from last line: ' + result)
+  console.log(result)
 );
-// Output:
-// > printed from pyodide
-// > Result from last line: 1337
+// Output in console.log:
+// > printed from pyodide <- From print function
+// > 1337 <- Returned from the execution (pyodide only)
+```
 
-// Set the use-option to specify which engine to use (if
-// you do not want to rely on the current or default
-// engine)
+Skulpt example:
+
+```javascript
+import { runCode } from 'client-side-python-runner';
+
 runCode('print("printed from skulpt")', {
   use: 'skulpt',
 });
-// Output:
+// Output in console.log:
 // > printed from skulpt
+```
+
+Setting options:
+
+```javascript
+import { setOptions } from 'client-side-python-runner';
+
+setOptions({
+  output: console.log, // Output from print(...)-functions
+  error: null, // Throws an exception unless this is set to a function
+  input: prompt, // How to feed the input(...)-function
+  pythonVersion: 3,
+});
 ```
 
 <details>
@@ -49,25 +55,39 @@ runCode('print("printed from skulpt")', {
 This will probably be more advanced in the future.
 
 ```javascript
-import pythonRunner, { runCode } from 'client-side-python-runner';
+import {
+  loadEngines,
+  loadEngine,
+  useEngine,
+  setOptions,
+  runCode,
+} from 'client-side-python-runner';
 
 // Load engines on beforehand
-await pythonRunner.loadEngines(['pyodide', 'skulpt']);
+await loadEngines(['pyodide', 'skulpt']);
+// OR
+await loadEngine('pyodide');
+await loadEngine('skulpt');
 
 // Set current engine
-await pythonRunner.useEngine('skulpt');
+await useEngine('skulpt');
 
 // Set options (this will merge with existing options)
-pythonRunner.setOptions({
+setOptions({
   // This represents the values returned from the print
   // function in Python.
-  output: console.log,
+  output: (arg) => console.log(arg),
 
   // Some engines can stop and wait for input, others
   // cannot. To be safe, prompt is the default as it
   // stops JavaScript altogether and thereforeworks on
   // all cases.
-  input: prompt,
+  input: (question) => prompt(question),
+
+  // Here you can opt into getting interpreted error
+  // feedback with line numbers and error types or just
+  // attempt to interpret these errors yourself.
+  error: (err) => console.error(err.lineNumber, err.error),
 
   // Version 3 is default, unless it is not possible
   // using the current engine
@@ -78,7 +98,7 @@ pythonRunner.setOptions({
 await runCode('print("printed from skulpt")');
 
 // Switch engine
-await pythonRunner.useEngine('pyodide');
+await useEngine('pyodide');
 
 // Run the code again, but in pyodide (which also can
 // return the result from the last execution)
@@ -91,6 +111,19 @@ print("printed from pyodide")
 ```
 
 </details>
+
+## Using it as a loader only
+
+If you want all the control - but not want to deal with loading of necessary scripts, it is possible to just use the loader:
+
+```javascript
+import { loadEngine } from 'client-side-python-runner';
+
+await loadEngine('pyodide');
+
+// After this, the window.pyodide is ready
+window.pyodide.runPython("print('I am using pyodide directly instead')");
+```
 
 ## Why
 
@@ -145,7 +178,7 @@ f(100000)
 
 # Plan
 
-As you may have noticed, this project is still in progress. It may not be complete until late 2021, but I will attempt to deliver a working version ASAP - such that it is possible to get feedback and evaluate if this actually could be a useful project.
+As you may have noticed, this project is still in progress. It may not be fully complete until late 2021, but I have made a working version - such that it is possible to get feedback and evaluate if this actually could be a useful project.
 
 ## First release (1.0.0)
 
@@ -155,13 +188,20 @@ As you may have noticed, this project is still in progress. It may not be comple
 - [x] Create examples of usage.
 - [x] Lazy loading Python runners - because this is probably not something you want to deal with until you actually want to run the Python code.
 
-### Fixed bugs (1.0.1)
+### Version 1.0.1
+
+#### Fixed bugs
 
 - [x] Running code again before the engine has loaded leads to an error as it failes to load multiple times in a row. Resolved by adding the awaiting code to a queue, then execute them in order when the engine is ready.
 
+### Version 1.1.0
+
+#### Added features
+
+- [x] Return consistent error messages across all engines as well as extract line and column (if possible) numbers. This is essential feedback to users.
+
 ## Later
 
-- [ ] Return consistent error messages across all engines as well as extract line and column numbers. This is essential feedback to users.
 - [ ] Include more Python runners.
 - [ ] Make it possible to run them offline (by building them into the project somehow)
 - [ ] Add portals between JavaScript and Python. Useful for executing functions outside the Python scope and the other way around (if possible).
