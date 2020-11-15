@@ -372,6 +372,7 @@ const pythonRunner = window.pythonRunner;
 
 export const useEngine = pythonRunner.useEngine;
 export const loadEngine = pythonRunner.loadEngine;
+export const loadEngines = pythonRunner.loadEngines;
 export const runCode = pythonRunner.runCode;
 export const setOptions = pythonRunner.setOptions;
 

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      pre {
+        background-color: #0f03;
+        border-radius: 4px;
+        padding: 10px;
+        position: relative;
+      }
+      pre:empty {
+        display: none;
+      }
+      pre::before {
+        content: 'JavaScript code';
+        font-weight: bold;
+        position: absolute;
+        right: 10px;
+      }
+      pre + pre {
+        background-color: #0003;
+      }
+      pre + pre::before {
+        content: 'Python output';
+      }
+      pre + pre + pre {
+        background-color: #f003;
+      }
+      pre + pre + pre::before {
+        content: 'Error output';
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Examples:</h1>
+
+    <h3>Loading example:</h3>
+    <pre id="input-1"></pre>
+    <pre id="output-1"></pre>
+
+    <h3>Pyodide example:</h3>
+    <pre id="input-2"></pre>
+    <pre id="output-2"></pre>
+
+    <h3>Skulpt example:</h3>
+    <pre id="input-3"></pre>
+    <pre id="output-3"></pre>
+
+    <h1>Errors/Exceptions (pyodide):</h1>
+
+    <h3>Assertion error:</h3>
+    <pre id="input-4"></pre>
+    <pre id="output-4"></pre>
+    <pre id="error-4"></pre>
+
+    <h3>Recursion error:</h3>
+    <pre id="input-5"></pre>
+    <pre id="output-5"></pre>
+    <pre id="error-5"></pre>
+
+    <h3>Overflow error:</h3>
+    <pre id="input-6"></pre>
+    <pre id="output-6"></pre>
+    <pre id="error-6"></pre>
+
+    <h3>Syntax error:</h3>
+    <pre id="input-7"></pre>
+    <pre id="output-7"></pre>
+    <pre id="error-7"></pre>
+
+    <h1>Errors/Exceptions (skulpt):</h1>
+
+    <h3>Assertion error:</h3>
+    <pre id="input-8"></pre>
+    <pre id="output-8"></pre>
+    <pre id="error-8"></pre>
+
+    <h3>Recursion error:</h3>
+    <pre id="input-9"></pre>
+    <pre id="output-9"></pre>
+    <pre id="error-9"></pre>
+
+    <h3>Overflow error:</h3>
+    <pre id="input-10"></pre>
+    <pre id="output-10"></pre>
+    <pre id="error-10"></pre>
+
+    <h3>Syntax error:</h3>
+    <pre id="input-11"></pre>
+    <pre id="output-11"></pre>
+    <pre id="error-11"></pre>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

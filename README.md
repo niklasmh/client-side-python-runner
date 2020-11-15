@@ -200,6 +200,14 @@ As you may have noticed, this project is still in progress. It may not be fully 
 
 - [x] Return consistent error messages across all engines as well as extract line and column numbers (if possible). This is essential feedback to users.
 
+### Version 1.1.1
+
+- [x] Add more examples.
+
+#### Fixed bugs
+
+- [x] Fix a bug with finding line number in recursion errors.
+
 ## Later
 
 - [ ] Include more Python runners.
