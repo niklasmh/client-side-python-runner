@@ -117,7 +117,7 @@ function interperetErrorMessage(error, code, engine) {
 
     // Get context information if it exists
     const secondLastLine = lines.pop();
-    if (/ +\^/.test(secondLastLine)) {
+    if (/^ +\^/.test(secondLastLine)) {
       // We now know the line above has line information
       const thirdLastLine = lines.pop();
       columnNumber = thirdLastLine.length - 4;
@@ -127,6 +127,16 @@ function interperetErrorMessage(error, code, engine) {
       const extractLineNumber = new RegExp('line ([0-9]+)');
       try {
         lineNumber = parseInt(extractLineNumber.exec(fourthLastLine)[1]);
+
+        // As we now have the line number we can get the line too
+        line = codeLines[lineNumber - 1];
+      } catch (ex) {}
+    } else if (/^  \[/.test(secondLastLine)) {
+      // We now know the line above has line number
+      const thirdLastLine = lines.pop();
+      const extractLineNumber = new RegExp('line ([0-9]+)');
+      try {
+        lineNumber = parseInt(extractLineNumber.exec(thirdLastLine)[1]);
 
         // As we now have the line number we can get the line too
         line = codeLines[lineNumber - 1];
@@ -146,7 +156,8 @@ function interperetErrorMessage(error, code, engine) {
     message = message.join(': ');
 
     try {
-      const lineInfo = message.split(' on line ')[1];
+      let lineInfo;
+      [message, lineInfo] = message.split(' on line ');
       const extractLineNumber = new RegExp('^([0-9]+)');
       lineNumber = parseInt(extractLineNumber.exec(lineInfo)[1]);
 
@@ -156,18 +167,19 @@ function interperetErrorMessage(error, code, engine) {
   }
 
   return {
-    error,
-    type,
-    message,
-    line,
-    lineNumber,
     columnNumber,
+    engine,
+    error,
     getNLinesAbove: (n) =>
       lineNumber === null
         ? []
         : codeLines.slice(lineNumber - 1 - n, lineNumber - 1),
     getNLinesBelow: (n) =>
       lineNumber === null ? [] : codeLines.slice(lineNumber, lineNumber + n),
+    line,
+    lineNumber,
+    message,
+    type,
   };
 }
 
