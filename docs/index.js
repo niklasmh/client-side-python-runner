@@ -3,7 +3,7 @@ import pythonRunner, {
   runCode,
   setOptions,
   useEngine,
-} from 'https://cdn.jsdelivr.net/npm/client-side-python-runner';
+} from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
 pythonRunner.debug = true;
 
