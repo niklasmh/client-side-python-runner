@@ -32,14 +32,14 @@ const setError = (arg) =>
   i++;
   setOptions({ output: (arg) => setOutput(arg) });
   input = `print("printed from pyodide");1337`;
-  code = `await runCode('${input}').then(console.log);`;
+  code = `await runCode(\`${input}\`).then(console.log);`;
   setInput(code);
   await runCode(input).then(console.log);
 
   i++;
   setOptions({ output: (arg) => setOutput(arg) });
   input = 'print("printed from skulpt")';
-  code = `await runCode('${input}', { use: 'skulpt' });`;
+  code = `await runCode(\`${input}\`, { use: 'skulpt' });`;
   setInput(code);
   await runCode(input, { use: 'skulpt' });
 
@@ -48,7 +48,7 @@ const setError = (arg) =>
   i++;
   setOptions({ error: (arg) => setError(arg) });
   input = `assert 1 == 2, "This is the feedback"`;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
@@ -56,7 +56,7 @@ const setError = (arg) =>
   setOptions({ error: (arg) => setError(arg) });
   input = `def f(): f()
 f()`;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
@@ -68,14 +68,14 @@ for i in range(100):
   print(i, f)
   f = f ** 2
 `;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
   i++;
   setOptions({ error: (arg) => setError(arg) });
   input = `a +`;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
@@ -85,7 +85,7 @@ for i in range(100):
   i++;
   setOptions({ error: (arg) => setError(arg) });
   input = `assert 1 == 2, "This is the feedback"`;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
@@ -93,7 +93,7 @@ for i in range(100):
   setOptions({ error: (arg) => setError(arg) });
   input = `def f(): f()
 f()`;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
@@ -105,14 +105,14 @@ for i in range(100):
   print(i, f)
   f = f ** 2
 `;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 
   i++;
   setOptions({ error: (arg) => setError(arg) });
   input = `a +`;
-  code = `await runCode('${input}');`;
+  code = `await runCode(\`${input}\`);`;
   setInput(code);
   await runCode(input);
 })();

@@ -8,7 +8,7 @@
     "url": "git+https://github.com/niklasmh/client-side-python-runner.git"
   },
   "scripts": {
-    "examples": "npx serve"
+    "docs": "npx serve"
   },
   "keywords": [
     "python",
