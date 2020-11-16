@@ -280,10 +280,10 @@ window.pythonRunner.loadEngine = async function (engine) {
     case 'skulpt':
       window.pythonRunner.loadingEngines.skulpt = [];
       const script1WasLoaded = await loadScript(
-        'https://www.skulpt.org/js/skulpt.min.js'
+        'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt.min.js'
       );
       const script2WasLoaded = await loadScript(
-        'https://www.skulpt.org/js/skulpt-stdlib.js'
+        'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt-stdlib.js'
       );
 
       if (!script1WasLoaded || !script2WasLoaded) return false;
