@@ -10,16 +10,53 @@ pythonRunner.debug = true;
 let input;
 let code;
 let i = 0;
-const setOutput = (arg) =>
+const setOutput = (arg = '') =>
   (document.getElementById('output-' + i).innerText += arg);
-const setInput = (arg) =>
+const setInput = (arg = '') =>
   (document.getElementById('input-' + i).innerText = arg);
-const setError = (arg) =>
-  (document.getElementById('error-' + i).innerText = JSON.stringify(
-    arg,
-    null,
-    2
-  ));
+const setError = (arg = '') =>
+  (document.getElementById('error-' + i).innerText =
+    arg && JSON.stringify(arg, null, 2));
+
+window.runSkulptCode = () => {
+  i = 0;
+  document.getElementById('output-0').innerText = '';
+  document.getElementById('error-0').innerText = '';
+  setOptions({
+    error: (arg) => {
+      setError(arg);
+      console.error(arg);
+    },
+    output: (arg) => {
+      setOutput(arg);
+      console.log(arg);
+    },
+  });
+  runCode(document.getElementById('code').value, { use: 'skulpt' });
+};
+
+window.runPyodideCode = () => {
+  i = 0;
+  document.getElementById('output-0').innerText = '';
+  document.getElementById('error-0').innerText = '';
+  setOptions({
+    error: (arg) => {
+      setError(arg);
+      console.error(arg);
+    },
+    output: (arg) => {
+      setOutput(arg);
+      console.log(arg);
+    },
+  });
+  runCode(document.getElementById('code').value, { use: 'pyodide' });
+};
+
+window.clearOutput = () => {
+  i = 0;
+  document.getElementById('error-0').innerText = '';
+  document.getElementById('output-0').innerText = '';
+};
 
 (async function () {
   i++;

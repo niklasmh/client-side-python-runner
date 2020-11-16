@@ -2,6 +2,8 @@
 
 Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt]
 
+Try it out [here](https://niklasmh.github.io/client-side-python-runner/).
+
 ```bash
 npm i client-side-python-runner --save
 # OR
@@ -213,3 +215,17 @@ As you may have noticed, this project is still in progress. It may not be fully 
 - [ ] Include more Python runners.
 - [ ] Make it possible to run them offline (by building them into the project somehow)
 - [ ] Add portals between JavaScript and Python. Useful for executing functions outside the Python scope and the other way around (if possible).
+
+## Contribute
+
+If you find any bugs or have any requests, feel free to file an issue [here](https://github.com/niklasmh/client-side-python-runner/issues). I am more than willing to take your requests into consideration such that this module can be used by more people.
+
+You are also welcome to contribute with code as well, just fork the project, do your magic, then create a PR. It may be that I will do some changes on your changes, it will depend, but if the contribution is really useful - it will be included somehow!
+
+To test out the project - such that you do not need to set up an environment for yourself - you can run:
+
+```
+npm run examples
+```
+
+Then go to [localhost:5000/docs/](http://localhost:5000/docs/) to test it out.

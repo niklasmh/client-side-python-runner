@@ -2,6 +2,10 @@
 <html>
   <head>
     <style>
+      textarea {
+        width: 420px;
+        height: 240px;
+      }
       pre {
         background-color: #0f03;
         border-radius: 4px;
@@ -32,6 +36,24 @@
     </style>
   </head>
   <body>
+    <h1>Sandbox:</h1>
+
+    <textarea id="code">
+for i in range(10):
+  print("i =", i)
+
+print("Done! Now, here comes an error:")
+
+undefinedvariable
+</textarea
+    >
+    <button onclick="window.runSkulptCode()">Run from skulpt</button>
+    <button onclick="window.runPyodideCode()">Run from pyodide</button>
+    <button onclick="window.clearOutput()">Clear</button>
+    <pre id="input-0"></pre>
+    <pre id="output-0"></pre>
+    <pre id="error-0"></pre>
+
     <h1>Examples:</h1>
 
     <h3>Loading example:</h3>
