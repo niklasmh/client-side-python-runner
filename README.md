@@ -16,6 +16,7 @@ Pyodide example:
 
 ```javascript
 import { runCode } from 'client-side-python-runner';
+// OR import { runCode } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
 // Run any Python code (runs using pyodide by default):
 runCode('print("printed from pyodide")\n1337').then((result) =>
@@ -60,7 +61,7 @@ This will probably be more advanced in the future.
 import {
   loadEngines,
   loadEngine,
-  useEngine,
+  setEngine,
   setOptions,
   runCode,
 } from 'client-side-python-runner';
@@ -72,7 +73,7 @@ await loadEngine('pyodide');
 await loadEngine('skulpt');
 
 // Set current engine
-await useEngine('skulpt');
+await setEngine('skulpt');
 
 // Set options (this will merge with existing options)
 setOptions({
@@ -100,7 +101,7 @@ setOptions({
 await runCode('print("printed from skulpt")');
 
 // Switch engine
-await useEngine('pyodide');
+await setEngine('pyodide');
 
 // Run the code again, but in pyodide (which also can
 // return the result from the last execution)
@@ -192,23 +193,21 @@ As you may have noticed, this project is still in progress. It may not be fully 
 
 ### Version 1.0.1
 
-#### Fixed bugs
-
 - [x] Running code again before the engine has loaded leads to an error as it failes to load multiple times in a row. Resolved by adding the awaiting code to a queue, then execute them in order when the engine is ready.
 
 ### Version 1.1.0
-
-#### Added features
 
 - [x] Return consistent error messages across all engines as well as extract line and column numbers (if possible). This is essential feedback to users.
 
 ### Version 1.1.1
 
 - [x] Add more examples.
-
-#### Fixed bugs
-
 - [x] Fix a bug with finding line number in recursion errors.
+
+### Version 1.1.5
+
+- [x] Rename `useEngine` to `setEngine` as CRA treats "use" functions as hooks.
+- [x] Add functions for handling variables (if possible): `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)`.
 
 ## Later
 

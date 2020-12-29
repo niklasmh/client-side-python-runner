@@ -41,7 +41,7 @@ window.pythonRunner.setOptions = function (options) {
   window.pythonRunner.options = { ...window.pythonRunner.options, ...options };
 };
 
-window.pythonRunner.useEngine = async function (engine) {
+window.pythonRunner.setEngine = async function (engine) {
   if (!window.pythonRunner.hasEngine(engine)) {
     if (!(await window.pythonRunner.loadEngine(engine))) {
       return false;
@@ -269,6 +269,17 @@ window.pythonRunner.loadEngine = async function (engine) {
             }
           }
         },
+        getVariable: async (name) => window.pyodide.globals[name],
+        setVariable: async (name, value) => {
+          window.pyodide.globals[name] = value;
+        },
+        clearVariable: async (name) => {
+          try {
+            if (typeof window.pyodide.globals[name] !== 'undefined') {
+              delete window.pyodide.globals[name];
+            }
+          } catch (ex) {}
+        },
       };
       if (window.pythonRunner.debug)
         log('Successfully loaded ' + engine + '!', 'lime');
@@ -334,6 +345,21 @@ window.pythonRunner.loadEngine = async function (engine) {
           }
           // Should not return anything
         },
+        getVariable: async (name) => {
+          throw new Error(
+            'Getting variables from skulpt is not possible at this moment. An internal system for keeping variable state in skulpt may be implemented in the future.'
+          );
+        },
+        setVariable: async (name, value) => {
+          throw new Error(
+            'Setting variables in skulpt is not possible at this moment. An internal system for keeping variable state in skulpt may be implemented in the future.'
+          );
+        },
+        clearVariable: async (name) => {
+          throw new Error(
+            'Clearing variables from skulpt is not possible at this moment. An internal system for keeping variable state in skulpt may be implemented in the future.'
+          );
+        },
       };
       if (window.pythonRunner.debug)
         log('Successfully loaded ' + engine + '!', 'lime');
@@ -368,12 +394,71 @@ window.pythonRunner.runCode = async function (code, userOptions = {}) {
   return await window.pythonRunner.loadedEngines[specificEngine].runCode(code);
 };
 
+window.pythonRunner.getVariable = async function (name, userOptions = {}) {
+  const {
+    use: specificEngine = window.pythonRunner.currentEngine,
+  } = userOptions;
+
+  if (!window.pythonRunner.hasEngine(specificEngine)) {
+    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+    if (!didLoad) {
+      throw new Error('Could not find the ' + specificEngine + ' engine');
+    }
+  }
+
+  return await window.pythonRunner.loadedEngines[specificEngine].getVariable(
+    name
+  );
+};
+
+window.pythonRunner.setVariable = async function (
+  name,
+  value,
+  userOptions = {}
+) {
+  const {
+    use: specificEngine = window.pythonRunner.currentEngine,
+  } = userOptions;
+
+  if (!window.pythonRunner.hasEngine(specificEngine)) {
+    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+    if (!didLoad) {
+      throw new Error('Could not find the ' + specificEngine + ' engine');
+    }
+  }
+
+  return await window.pythonRunner.loadedEngines[specificEngine].setVariable(
+    name,
+    value
+  );
+};
+
+window.pythonRunner.clearVariable = async function (name, userOptions = {}) {
+  const {
+    use: specificEngine = window.pythonRunner.currentEngine,
+  } = userOptions;
+
+  if (!window.pythonRunner.hasEngine(specificEngine)) {
+    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+    if (!didLoad) {
+      throw new Error('Could not find the ' + specificEngine + ' engine');
+    }
+  }
+
+  return await window.pythonRunner.loadedEngines[specificEngine].clearVariable(
+    name
+  );
+};
+
 const pythonRunner = window.pythonRunner;
 
-export const useEngine = pythonRunner.useEngine;
+export const setEngine = pythonRunner.setEngine;
 export const loadEngine = pythonRunner.loadEngine;
 export const loadEngines = pythonRunner.loadEngines;
 export const runCode = pythonRunner.runCode;
 export const setOptions = pythonRunner.setOptions;
+export const getVariable = pythonRunner.getVariable;
+export const setVariable = pythonRunner.setVariable;
+export const clearVariable = pythonRunner.clearVariable;
 
 export default pythonRunner;
