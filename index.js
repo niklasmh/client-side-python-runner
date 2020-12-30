@@ -98,7 +98,7 @@ async function untilTheEngineIsLoaded(engine) {
   }
 }
 
-function interperetErrorMessage(error, code, engine) {
+function interpretErrorMessage(error, code, engine) {
   const codeLines = code.split('\n');
 
   let type = null;
@@ -284,10 +284,10 @@ window.pythonRunner.loadEngine = async function (engine) {
           } catch (ex) {
             if (typeof window.pythonRunner.options.error === 'function') {
               window.pythonRunner.options.error(
-                interperetErrorMessage(ex, code, engine)
+                interpretErrorMessage(ex, code, engine)
               );
             } else {
-              throw interperetErrorMessage(ex, code, engine);
+              throw interpretErrorMessage(ex, code, engine);
             }
           }
         },
@@ -401,10 +401,10 @@ window.pythonRunner.loadEngine = async function (engine) {
           } catch (ex) {
             if (typeof window.pythonRunner.options.error === 'function') {
               window.pythonRunner.options.error(
-                interperetErrorMessage(ex, code, engine)
+                interpretErrorMessage(ex, code, engine)
               );
             } else {
-              throw interperetErrorMessage(ex, code, engine);
+              throw interpretErrorMessage(ex, code, engine);
             }
           }
           // Update variables
