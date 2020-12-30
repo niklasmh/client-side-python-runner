@@ -257,9 +257,30 @@ window.pythonRunner.loadEngine = async function (engine) {
         engine,
         pyodide: window.pyodide,
         predefinedVariables: [],
-        runCode: async (code, options = {}) => {
+        newVariables: [],
+        runCode: async (
+          code,
+          options = {
+            updateVariables: true,
+          }
+        ) => {
           try {
-            return window.pyodide.runPython(code);
+            const result = window.pyodide.runPython(code);
+            // Update variables
+            if (options.updateVariables) {
+              window.pythonRunner.loadedEngines[
+                engine
+              ].newVariables = Object.keys(
+                window.pyodide.runPython('vars()')
+              ).filter(
+                (name) =>
+                  !window.pythonRunner.loadedEngines[
+                    engine
+                  ].predefinedVariables.includes(name)
+              );
+            }
+            // Return the result
+            return result;
           } catch (ex) {
             if (typeof window.pythonRunner.options.error === 'function') {
               window.pythonRunner.options.error(
@@ -348,7 +369,13 @@ window.pythonRunner.loadEngine = async function (engine) {
         engine,
         skulpt: window.Sk,
         predefinedVariables: [],
-        runCode: async (code, options = {}) => {
+        newVariables: [],
+        runCode: async (
+          code,
+          options = {
+            updateVariables: true,
+          }
+        ) => {
           if (options.canvas) {
             (
               window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})
@@ -379,6 +406,17 @@ window.pythonRunner.loadEngine = async function (engine) {
             } else {
               throw interperetErrorMessage(ex, code, engine);
             }
+          }
+          // Update variables
+          if (options.updateVariables) {
+            window.pythonRunner.loadedEngines[
+              engine
+            ].newVariables = Object.keys(Sk.globals).filter(
+              (name) =>
+                !window.pythonRunner.loadedEngines[
+                  engine
+                ].predefinedVariables.includes(name)
+            );
           }
           // Should not return anything
         },
