@@ -49,7 +49,7 @@ window.pythonRunner.setEngine = async function (engine) {
   }
   window.pythonRunner.currentEngine = engine;
   if (window.pythonRunner.debug)
-    log('Using ' + engine + ' unless other is specified', 'orange');
+    log('Using the ' + engine + ' engine', 'orange');
   return true;
 };
 
@@ -256,6 +256,7 @@ window.pythonRunner.loadEngine = async function (engine) {
       window.pythonRunner.loadedEngines[engine] = {
         engine,
         pyodide: window.pyodide,
+        predefinedVariables: [],
         runCode: async (code, options = {}) => {
           try {
             return window.pyodide.runPython(code);
@@ -270,6 +271,38 @@ window.pythonRunner.loadEngine = async function (engine) {
           }
         },
         getVariable: async (name) => window.pyodide.globals[name],
+        getVariables: async (
+          includeValues = false,
+          filter = null,
+          onlyShowNewVariables = true
+        ) => {
+          let variables = Object.entries(window.pyodide.runPython('vars()'));
+          if (onlyShowNewVariables) {
+            variables = variables.filter(
+              ([name]) =>
+                !window.pythonRunner.loadedEngines[
+                  engine
+                ].predefinedVariables.includes(name)
+            );
+          }
+          if (filter) {
+            if (typeof filter === 'function') {
+              variables = variables.filter(([name]) => filter(name));
+            } else {
+              if (Array.isArray(filter)) {
+                variables = variables.filter(([name]) => filter.includes(name));
+              } else {
+                variables = variables.filter(([name]) => filter.test(name));
+              }
+            }
+          }
+          if (includeValues) {
+            variables = variables.map(([name, value]) => ({ name, value }));
+          } else {
+            variables = variables.map(([name]) => name);
+          }
+          return variables;
+        },
         setVariable: async (name, value) => {
           window.pyodide.globals[name] = value;
         },
@@ -281,6 +314,9 @@ window.pythonRunner.loadEngine = async function (engine) {
           } catch (ex) {}
         },
       };
+      window.pythonRunner.loadedEngines[
+        engine
+      ].predefinedVariables = Object.keys(window.pyodide.runPython('vars()'));
       if (window.pythonRunner.debug)
         log('Successfully loaded ' + engine + '!', 'lime');
       for (let job of window.pythonRunner.loadingEngines[engine]) {
@@ -311,6 +347,7 @@ window.pythonRunner.loadEngine = async function (engine) {
       window.pythonRunner.loadedEngines[engine] = {
         engine,
         skulpt: window.Sk,
+        predefinedVariables: [],
         runCode: async (code, options = {}) => {
           if (options.canvas) {
             (
@@ -346,9 +383,42 @@ window.pythonRunner.loadEngine = async function (engine) {
           // Should not return anything
         },
         getVariable: async (name) => {
-          throw new Error(
-            'Getting variables from skulpt is not possible at this moment. An internal system for keeping variable state in skulpt may be implemented in the future.'
-          );
+          return Sk.ffi.remapToJs(Sk.globals[name]);
+        },
+        getVariables: async (
+          includeValues = false,
+          filter = null,
+          onlyShowNewVariables = true
+        ) => {
+          let variables = Object.entries(Sk.globals);
+          if (onlyShowNewVariables) {
+            variables = variables.filter(
+              ([name]) =>
+                !window.pythonRunner.loadedEngines[
+                  engine
+                ].predefinedVariables.includes(name)
+            );
+          }
+          if (filter) {
+            if (typeof filter === 'function') {
+              variables = variables.filter(([name]) => filter(name));
+            } else {
+              if (Array.isArray(filter)) {
+                variables = variables.filter(([name]) => filter.includes(name));
+              } else {
+                variables = variables.filter(([name]) => filter.test(name));
+              }
+            }
+          }
+          if (includeValues) {
+            variables = variables.map(([name, value]) => ({
+              name,
+              value: value.v,
+            }));
+          } else {
+            variables = variables.map(([name]) => name);
+          }
+          return variables;
         },
         setVariable: async (name, value) => {
           throw new Error(
@@ -361,6 +431,10 @@ window.pythonRunner.loadEngine = async function (engine) {
           );
         },
       };
+      window.pythonRunner.loadedEngines[engine].runCode('1');
+      window.pythonRunner.loadedEngines[
+        engine
+      ].predefinedVariables = Object.keys(Sk.globals);
       if (window.pythonRunner.debug)
         log('Successfully loaded ' + engine + '!', 'lime');
       for (let job of window.pythonRunner.loadingEngines[engine]) {
@@ -411,6 +485,34 @@ window.pythonRunner.getVariable = async function (name, userOptions = {}) {
   );
 };
 
+window.pythonRunner.getVariables = async function (
+  userOptions = {
+    includeValues: false,
+    filter: null,
+    onlyShowNewVariables: true,
+  }
+) {
+  const {
+    use: specificEngine = window.pythonRunner.currentEngine,
+    includeValues = false,
+    filter = null,
+    onlyShowNewVariables = true,
+  } = userOptions;
+
+  if (!window.pythonRunner.hasEngine(specificEngine)) {
+    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+    if (!didLoad) {
+      throw new Error('Could not find the ' + specificEngine + ' engine');
+    }
+  }
+
+  return await window.pythonRunner.loadedEngines[specificEngine].getVariables(
+    includeValues,
+    filter,
+    onlyShowNewVariables
+  );
+};
+
 window.pythonRunner.setVariable = async function (
   name,
   value,
@@ -458,6 +560,7 @@ export const loadEngines = pythonRunner.loadEngines;
 export const runCode = pythonRunner.runCode;
 export const setOptions = pythonRunner.setOptions;
 export const getVariable = pythonRunner.getVariable;
+export const getVariables = pythonRunner.getVariables;
 export const setVariable = pythonRunner.setVariable;
 export const clearVariable = pythonRunner.clearVariable;
 
