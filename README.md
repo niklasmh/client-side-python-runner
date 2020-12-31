@@ -49,6 +49,8 @@ setOptions({
   error: null, // Throws an exception unless this is set to a function
   input: prompt, // How to feed the input(...)-function
   pythonVersion: 3,
+  storeStateBetweenRuns: true,
+  // If storeStateBetweenRuns is set (which is default), all variables will be transferred from the last execution into the next execution. It is possible to override this in the `runCode` function, if you want full control over the state.
 });
 ```
 
