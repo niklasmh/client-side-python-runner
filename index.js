@@ -261,24 +261,25 @@ window.pythonRunner.loadEngine = async function (engine) {
         newVariables: [],
         runCode: async (
           code,
-          options = {
-            updateVariables: true,
-            clearVariablesBeforeRun: false,
-            variables: null,
-          }
+          {
+            updateVariables = window.pythonRunner.options.storeStateBetweenRuns,
+            clearVariablesBeforeRun = !window.pythonRunner.options
+              .storeStateBetweenRuns,
+            variables = null,
+          } = {}
         ) => {
           try {
-            if (options.clearVariablesBeforeRun) {
+            if (clearVariablesBeforeRun) {
               window.pythonRunner.loadedEngines[engine].clearVariables();
             }
-            if (options.variables) {
-              Object.entries(options.variables).forEach(
+            if (variables) {
+              Object.entries(variables).forEach(
                 ([name, value]) => (window.pyodide.globals[name] = value)
               );
             }
             const result = window.pyodide.runPython(code);
             // Update variables
-            if (options.updateVariables) {
+            if (updateVariables) {
               window.pythonRunner.loadedEngines[
                 engine
               ].newVariables = Object.keys(window.pyodide.runPython('vars()'))
@@ -347,9 +348,11 @@ window.pythonRunner.loadEngine = async function (engine) {
           window.pythonRunner.loadedEngines[engine].newVariables[name] = value;
         },
         clearVariable: async (name) => {
-          if (typeof window.pyodide.globals[name] !== 'undefined') {
-            delete window.pyodide.globals[name];
-          }
+          try {
+            if (typeof window.pyodide.globals[name] !== 'undefined') {
+              delete window.pyodide.globals[name];
+            }
+          } catch (ex) {}
           if (name in window.pythonRunner.loadedEngines[engine].newVariables) {
             delete window.pythonRunner.loadedEngines[engine].newVariables[name];
           }
@@ -358,9 +361,11 @@ window.pythonRunner.loadEngine = async function (engine) {
           for (const name of Object.keys(
             window.pythonRunner.loadedEngines[engine].newVariables
           )) {
-            if (typeof window.pyodide.globals[name] !== 'undefined') {
-              delete window.pyodide.globals[name];
-            }
+            try {
+              if (typeof window.pyodide.globals[name] !== 'undefined') {
+                delete window.pyodide.globals[name];
+              }
+            } catch (ex) {}
           }
           window.pythonRunner.loadedEngines[engine].newVariables = {};
         },
@@ -402,22 +407,24 @@ window.pythonRunner.loadEngine = async function (engine) {
         newVariables: [],
         runCode: async (
           code,
-          options = {
-            updateVariables: true,
-            clearVariablesBeforeRun: false,
-            variables: null,
-          }
+          {
+            canvas = null,
+            updateVariables = window.pythonRunner.options.storeStateBetweenRuns,
+            clearVariablesBeforeRun = !window.pythonRunner.options
+              .storeStateBetweenRuns,
+            variables = null,
+          } = {}
         ) => {
-          if (options.canvas) {
+          if (canvas) {
             (
               window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})
-            ).target = options.canvas;
+            ).target = canvas;
           }
           try {
             let codeBeforeRun = '';
             const interpolateStrings = (s) =>
               typeof s === 'string' ? `"${s}"` : s;
-            if (options.clearVariablesBeforeRun) {
+            if (clearVariablesBeforeRun) {
               window.pythonRunner.loadedEngines[engine].clearVariables();
             } else {
               codeBeforeRun = Object.entries(
@@ -432,8 +439,8 @@ window.pythonRunner.loadEngine = async function (engine) {
                 )
                 .join('');
             }
-            if (options.variables) {
-              codeBeforeRun += Object.entries(options.variables)
+            if (variables) {
+              codeBeforeRun += Object.entries(variables)
                 .map(
                   ([name, value]) =>
                     name +
@@ -473,7 +480,7 @@ window.pythonRunner.loadEngine = async function (engine) {
             }
           }
           // Update variables
-          if (options.updateVariables) {
+          if (updateVariables) {
             window.pythonRunner.loadedEngines[
               engine
             ].newVariables = Object.keys(Sk.globals)
