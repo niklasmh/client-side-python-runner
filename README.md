@@ -209,10 +209,17 @@ As you may have noticed, this project is still in progress. It may not be fully 
 - [x] Rename `useEngine` to `setEngine` as CRA treats "use" functions as hooks.
 - [x] Add functions for handling variables (if possible): `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)`.
 
+### Version 1.2.0
+
+- [x] Make `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)` work with skulpt.
+- [x] Add function for getting all variables: `getVariables({filter, includeValues, onlyShowNewVariables})`.
+- [x] Add option for storing state (variables) between runs: storeStateBetweenRuns.
+- [x] Add more options for each run: `runCode(code, {variables, clearVariablesBeforeRun, updateVariables})`. `variables` makes it possible to inject new variables before the run. `clearVariablesBeforeRun` makes it possible to clear all variables before the run such that you start fresh. `updateVariables` makes it possible to store the variables after the run - such that they can be injected into the next run. The behavior should be consistent between pyodide and skulpt.
+
 ## Later
 
 - [ ] Include more Python runners.
-- [ ] Make it possible to run them offline (by building them into the project somehow)
+- [ ] Make it possible to run them offline (by building them into the project somehow).
 - [ ] Add portals between JavaScript and Python. Useful for executing functions outside the Python scope and the other way around (if possible).
 
 ## Contribute
