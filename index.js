@@ -351,12 +351,16 @@ window.pythonRunner.loadEngine = async function (
           return variables.map(([name]) => name);
         },
         setVariable: async (name, value) => {
-          window.pyodide.globals[name] = value;
+          try {
+            window.pyodide.globals[name] = value;
+          } catch (ex) {}
           window.pythonRunner.loadedEngines[engine].newVariables[name] = value;
         },
         setVariables: async (variables) => {
           Object.entries(variables).forEach(([name, value]) => {
-            window.pyodide.globals[name] = value;
+            try {
+              window.pyodide.globals[name] = value;
+            } catch (ex) {}
             window.pythonRunner.loadedEngines[engine].newVariables[
               name
             ] = value;
