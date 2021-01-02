@@ -24,7 +24,7 @@ runCode('print("printed from pyodide")\n1337').then((result) =>
 );
 // Output in console.log:
 // > printed from pyodide <- From print function
-// > 1337 <- Returned from the execution (pyodide only)
+// > 1337 <- Returned from last line in the execution (pyodide only)
 ```
 
 Skulpt example:
@@ -76,6 +76,9 @@ await loadEngine('skulpt');
 
 // Set current engine
 await setEngine('skulpt');
+
+// Load engine AND set current engine
+await loadEngine('skulpt', { useEngine: true });
 
 // Set options (this will merge with existing options)
 setOptions({
@@ -129,6 +132,129 @@ await loadEngine('pyodide');
 // After this, the window.pyodide is ready
 window.pyodide.runPython("print('I am using pyodide directly instead')");
 ```
+
+## API
+
+List of all exported functions:
+
+- [`loadEngine`](#async-loadengine)
+- [`loadEngines`](#async-loadengines)
+- [`setEngine`](#async-setengine)
+- [`runCode`](#async-runcode)
+- [`setOptions`](#setoptions)
+- [`getVariable`](#async-getvariable)
+- [`getVariables`](#async-getvariables)
+- [`setVariable`](#async-setvariable)
+- [`setVariables`](#async-setvariables)
+- [`clearVariable`](#async-clearvariable)
+- [`clearVariables`](#async-clearvariables)
+
+### `async loadEngine`
+
+Parameters: `(engine: string, options = { useEngine: boolean = true })`
+
+Description: Load an engine.
+
+### `async loadEngine`
+
+Parameters: `(engines: string[])`
+
+Load multiple engines. Waits until all of them are loaded.
+
+### `async setEngine`
+
+Parameters: `(engine: string)`
+
+Set the current engine.
+
+### `async runCode`
+
+Parameters:
+
+```typescript
+(code: string, options = {
+  variables: object = {},
+  clearVariablesBeforeRun: boolean = false,
+  updateVariables: boolean = true,
+  use: string = currentEngine
+})
+```
+
+Run Python code using the current engine (or default if not set). This function will also return the result of the last line if possible (e.g. if 'pyodide' is the current engine).
+
+### `setOptions`
+
+Parameters:
+
+```typescript
+({
+  output: function(output) = console.log,
+  error: function(error) = null,
+  input: function(question) = window.prompt,
+  pythonVersion: number = 3,
+  storeStateBetweenRuns: boolean = true,
+})
+```
+
+Set options.
+
+### `setOptions`
+
+Parameters:
+
+```typescript
+({
+  output: function(output) = console.log,
+  error: function(error) = null,
+  input: function(question) = window.prompt,
+  pythonVersion: number = 3,
+  storeStateBetweenRuns: boolean = true,
+})
+```
+
+Set options. This will go in effect immediately.
+
+### `async getVariable`
+
+Parameters: `(name: string, options = { use: string = currentEngine })`
+
+### `async getVariables`
+
+Parameters:
+
+```typescript
+(options = {
+  use: string = currentEngine,
+  includeValues: boolean = false,
+  filter: function(name) | array | RegExp = null,
+  onlyShowNewVariables: boolean = true,
+})
+```
+
+### `async setVariable`
+
+Parameters: `(name: string, value: any, options = { use: string = currentEngine })`
+
+### `async setVariables`
+
+Parameters:
+
+```typescript
+(
+  variables: {
+    [name: string]: value (any)
+  },
+  options = { use: string = currentEngine }
+)
+```
+
+### `async clearVariable`
+
+Parameters: `(name: string, options = { use: string = currentEngine })`
+
+### `async clearVariables`
+
+Parameters: `(options = { use: string = currentEngine })`
 
 ## Why
 
@@ -195,28 +321,32 @@ As you may have noticed, this project is still in progress. It may not be fully 
 
 ### Version 1.0.1
 
-- [x] Running code again before the engine has loaded leads to an error as it failes to load multiple times in a row. Resolved by adding the awaiting code to a queue, then execute them in order when the engine is ready.
+- Running code again before the engine has loaded leads to an error as it failes to load multiple times in a row. Resolved by adding the awaiting code to a queue, then execute them in order when the engine is ready.
 
 ### Version 1.1.0
 
-- [x] Return consistent error messages across all engines as well as extract line and column numbers (if possible). This is essential feedback to users.
+- Return consistent error messages across all engines as well as extract line and column numbers (if possible). This is essential feedback to users.
 
 ### Version 1.1.1
 
-- [x] Add more examples.
-- [x] Fix a bug with finding line number in recursion errors.
+- Add more examples.
+- Fix a bug with finding line number in recursion errors.
 
 ### Version 1.1.5
 
-- [x] Rename `useEngine` to `setEngine` as CRA treats "use" functions as hooks.
-- [x] Add functions for handling variables (if possible): `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)`.
+- Rename `useEngine` to `setEngine` as CRA treats "use" functions as hooks.
+- Add functions for handling variables (if possible): `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)`.
 
 ### Version 1.2.0
 
-- [x] Make `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)` work with skulpt.
-- [x] Add function for getting all variables: `getVariables({filter, includeValues, onlyShowNewVariables})`.
-- [x] Add option for storing state (variables) between runs: storeStateBetweenRuns.
-- [x] Add more options for each run: `runCode(code, {variables, clearVariablesBeforeRun, updateVariables})`. `variables` makes it possible to inject new variables before the run. `clearVariablesBeforeRun` makes it possible to clear all variables before the run such that you start fresh. `updateVariables` makes it possible to store the variables after the run - such that they can be injected into the next run. The behavior should be consistent between pyodide and skulpt.
+- Make `getVariable(name)`, `setVariable(name, value)`, and `clearVariable(name)` work with skulpt.
+- Add function for getting all variables: `getVariables({filter, includeValues, onlyShowNewVariables})`.
+- Add option for storing state (variables) between runs: storeStateBetweenRuns.
+- Add more options for each run: `runCode(code, {variables, clearVariablesBeforeRun, updateVariables})`. `variables` makes it possible to inject new variables before the run. `clearVariablesBeforeRun` makes it possible to clear all variables before the run such that you start fresh. `updateVariables` makes it possible to store the variables after the run - such that they can be injected into the next run. The behavior should be consistent between pyodide and skulpt.
+
+### Version 1.2.1
+
+- Add function for setting multiple variables at once: `setVariables`.
 
 ## Later
 
