@@ -700,7 +700,7 @@ window.pythonRunner.setVariables = async function (
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].setVariable(
+  return await window.pythonRunner.loadedEngines[specificEngine].setVariables(
     variables
   );
 };
