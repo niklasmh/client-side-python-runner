@@ -155,7 +155,7 @@ Parameters: `(engine: string, options = { useEngine: boolean = true })`
 
 Description: Load an engine.
 
-### `async loadEngine`
+### `async loadEngines`
 
 Parameters: `(engines: string[])`
 
@@ -181,22 +181,6 @@ Parameters:
 ```
 
 Run Python code using the current engine (or default if not set). This function will also return the result of the last line if possible (e.g. if 'pyodide' is the current engine).
-
-### `setOptions`
-
-Parameters:
-
-```typescript
-({
-  output: function(output) = console.log,
-  error: function(error) = null,
-  input: function(question) = window.prompt,
-  pythonVersion: number = 3,
-  storeStateBetweenRuns: boolean = true,
-})
-```
-
-Set options.
 
 ### `setOptions`
 
