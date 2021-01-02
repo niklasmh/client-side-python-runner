@@ -184,9 +184,16 @@ function interpretErrorMessage(error, code, engine) {
   };
 }
 
-window.pythonRunner.loadEngine = async function (engine) {
+window.pythonRunner.loadEngine = async function (
+  engine = window.pythonRunner.currentEngine,
+  { useEngine = false } = {}
+) {
   if (window.pythonRunner.debug) log('Loading ' + engine + '...');
-  if (window.pythonRunner.hasEngine(engine)) return true;
+  if (window.pythonRunner.hasEngine(engine)) {
+    if (useEngine) window.pythonRunner.currentEngine = engine;
+    return true;
+  }
+  if (useEngine) window.pythonRunner.currentEngine = engine;
   if (window.pythonRunner.isLoadingEngine(engine)) {
     try {
       await untilTheEngineIsLoaded(engine);
@@ -346,6 +353,14 @@ window.pythonRunner.loadEngine = async function (engine) {
         setVariable: async (name, value) => {
           window.pyodide.globals[name] = value;
           window.pythonRunner.loadedEngines[engine].newVariables[name] = value;
+        },
+        setVariables: async (variables) => {
+          Object.entries(variables).forEach(([name, value]) => {
+            window.pyodide.globals[name] = value;
+            window.pythonRunner.loadedEngines[engine].newVariables[
+              name
+            ] = value;
+          });
         },
         clearVariable: async (name) => {
           try {
@@ -550,6 +565,13 @@ window.pythonRunner.loadEngine = async function (engine) {
         setVariable: async (name, value) => {
           window.pythonRunner.loadedEngines[engine].newVariables[name] = value;
         },
+        setVariables: async (variables) => {
+          Object.entries(variables).forEach(([name, value]) => {
+            window.pythonRunner.loadedEngines[engine].newVariables[
+              name
+            ] = value;
+          });
+        },
         clearVariable: async (name) => {
           if (name in window.pythonRunner.loadedEngines[engine].newVariables) {
             delete window.pythonRunner.loadedEngines[engine].newVariables[name];
@@ -663,6 +685,26 @@ window.pythonRunner.setVariable = async function (
   );
 };
 
+window.pythonRunner.setVariables = async function (
+  variables,
+  userOptions = {}
+) {
+  const {
+    use: specificEngine = window.pythonRunner.currentEngine,
+  } = userOptions;
+
+  if (!window.pythonRunner.hasEngine(specificEngine)) {
+    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+    if (!didLoad) {
+      throw new Error('Could not find the ' + specificEngine + ' engine');
+    }
+  }
+
+  return await window.pythonRunner.loadedEngines[specificEngine].setVariable(
+    variables
+  );
+};
+
 window.pythonRunner.clearVariable = async function (name, userOptions = {}) {
   const {
     use: specificEngine = window.pythonRunner.currentEngine,
@@ -707,6 +749,7 @@ export const setOptions = pythonRunner.setOptions;
 export const getVariable = pythonRunner.getVariable;
 export const getVariables = pythonRunner.getVariables;
 export const setVariable = pythonRunner.setVariable;
+export const setVariables = pythonRunner.setVariables;
 export const clearVariable = pythonRunner.clearVariable;
 export const clearVariables = pythonRunner.clearVariables;
 
