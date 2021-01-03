@@ -51,6 +51,8 @@ setOptions({
   pythonVersion: 3,
   storeStateBetweenRuns: true,
   // If storeStateBetweenRuns is set (which is default), all variables will be transferred from the last execution into the next execution. It is possible to override this in the `runCode` function, if you want full control over the state.
+  onLoading: (engine) => {},
+  onLoaded: (engine) => {},
 });
 ```
 
@@ -193,6 +195,8 @@ Parameters:
   input: function(question) = window.prompt,
   pythonVersion: number = 3,
   storeStateBetweenRuns: boolean = true,
+  onLoading: function = (engine) => {},
+  onLoaded: function = (engine) => {},
 })
 ```
 
@@ -331,6 +335,10 @@ As you may have noticed, this project is still in progress. It may not be fully 
 ### Version 1.2.1
 
 - Add function for setting multiple variables at once: `setVariables`.
+
+### Version 1.2.4
+
+- Add option for listening on loading of engines such that it is possible to get more control.
 
 ## Later
 

@@ -13,6 +13,8 @@ window.pythonRunner = window.pythonRunner || {
     input: window.prompt,
     pythonVersion: 3,
     storeStateBetweenRuns: true,
+    onLoading: (engine) => {},
+    onLoaded: (engine) => {},
   },
 };
 
@@ -206,6 +208,8 @@ window.pythonRunner.loadEngine = async function (
   switch (engine) {
     case 'pyodide':
       window.pythonRunner.loadingEngines.pyodide = [];
+      window.pythonRunner.options.onLoading(engine);
+
       const scriptWasLoaded = await loadScript(
         'https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js'
       );
@@ -398,9 +402,12 @@ window.pythonRunner.loadEngine = async function (
         await job();
       }
       delete window.pythonRunner.loadingEngines[engine];
+      window.pythonRunner.options.onLoaded(engine);
       return true;
     case 'skulpt':
       window.pythonRunner.loadingEngines.skulpt = [];
+      window.pythonRunner.options.onLoading(engine);
+
       const script1WasLoaded = await loadScript(
         'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt.min.js'
       );
@@ -595,6 +602,7 @@ window.pythonRunner.loadEngine = async function (
         await job();
       }
       delete window.pythonRunner.loadingEngines[engine];
+      window.pythonRunner.options.onLoaded(engine);
       return true;
 
     default:
