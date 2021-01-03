@@ -218,7 +218,7 @@ Parameters:
 ```typescript
 (options = {
   use: string = currentEngine,
-  includeValues: boolean = false,
+  includeValues: boolean = true,
   filter: function(name) | array | RegExp = null,
   onlyShowNewVariables: boolean = true,
 })

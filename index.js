@@ -273,7 +273,7 @@ window.pythonRunner.loadEngine = async function (
         engine,
         pyodide: window.pyodide,
         predefinedVariables: [],
-        newVariables: [],
+        newVariables: {},
         runCode: async (
           code,
           {
@@ -328,7 +328,7 @@ window.pythonRunner.loadEngine = async function (
         },
         getVariable: async (name) => window.pyodide.globals[name],
         getVariables: async (
-          includeValues = false,
+          includeValues = true,
           filter = null,
           onlyShowNewVariables = true
         ) => {
@@ -436,7 +436,7 @@ window.pythonRunner.loadEngine = async function (
         engine,
         skulpt: window.Sk,
         predefinedVariables: [],
-        newVariables: [],
+        newVariables: {},
         runCode: async (
           code,
           {
@@ -515,17 +515,17 @@ window.pythonRunner.loadEngine = async function (
           if (updateVariables) {
             window.pythonRunner.loadedEngines[
               engine
-            ].newVariables = Object.keys(Sk.globals)
+            ].newVariables = Object.entires(Sk.globals)
               .filter(
-                (name) =>
+                ([name]) =>
                   !window.pythonRunner.loadedEngines[
                     engine
                   ].predefinedVariables.includes(name)
               )
               .reduce(
-                (acc, name) => ({
+                (acc, [name, value]) => ({
                   ...acc,
-                  [name]: Sk.globals[name].v,
+                  [name]: value.v,
                 }),
                 {}
               );
@@ -536,7 +536,7 @@ window.pythonRunner.loadEngine = async function (
           return Sk.ffi.remapToJs(Sk.globals[name]);
         },
         getVariables: async (
-          includeValues = false,
+          includeValues = true,
           filter = null,
           onlyShowNewVariables = true
         ) => {
@@ -655,14 +655,14 @@ window.pythonRunner.getVariable = async function (name, userOptions = {}) {
 
 window.pythonRunner.getVariables = async function (
   userOptions = {
-    includeValues: false,
+    includeValues: true,
     filter: null,
     onlyShowNewVariables: true,
   }
 ) {
   const {
     use: specificEngine = window.pythonRunner.currentEngine,
-    includeValues = false,
+    includeValues = true,
     filter = null,
     onlyShowNewVariables = true,
   } = userOptions;
