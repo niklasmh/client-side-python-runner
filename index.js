@@ -32,6 +32,10 @@ window.pythonRunner.isLoadingEngine = function (engine) {
   return engine in window.pythonRunner.loadingEngines;
 };
 
+window.pythonRunner.getOptions = function () {
+  return window.pythonRunner.options;
+};
+
 window.pythonRunner.setOptions = function (options) {
   if ('pythonVersion' in options) {
     if ('skulpt' in pythonRunner.loadedEngines) {
@@ -284,9 +288,11 @@ window.pythonRunner.loadEngine = async function (
               window.pythonRunner.loadedEngines[engine].clearVariables();
             }
             if (variables) {
-              Object.entries(variables).forEach(
-                ([name, value]) => (window.pyodide.globals[name] = value)
-              );
+              Object.entries(variables).forEach(([name, value]) => {
+                try {
+                  window.pyodide.globals[name] = value;
+                } catch (ex) {}
+              });
             }
             const result = window.pyodide.runPython(code);
             // Update variables
@@ -757,6 +763,7 @@ export const setEngine = pythonRunner.setEngine;
 export const loadEngine = pythonRunner.loadEngine;
 export const loadEngines = pythonRunner.loadEngines;
 export const runCode = pythonRunner.runCode;
+export const getOptions = pythonRunner.getOptions;
 export const setOptions = pythonRunner.setOptions;
 export const getVariable = pythonRunner.getVariable;
 export const getVariables = pythonRunner.getVariables;

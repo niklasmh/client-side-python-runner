@@ -143,6 +143,7 @@ List of all exported functions:
 - [`loadEngines`](#async-loadengines)
 - [`setEngine`](#async-setengine)
 - [`runCode`](#async-runcode)
+- [`getOptions`](#getoptions)
 - [`setOptions`](#setoptions)
 - [`getVariable`](#async-getvariable)
 - [`getVariables`](#async-getvariables)
@@ -183,6 +184,10 @@ Parameters:
 ```
 
 Run Python code using the current engine (or default if not set). This function will also return the result of the last line if possible (e.g. if 'pyodide' is the current engine).
+
+### `getOptions`
+
+Get all options.
 
 ### `setOptions`
 
