@@ -2,7 +2,7 @@ import pythonRunner, {
   loadEngines,
   runCode,
   setOptions,
-  useEngine,
+  setEngine,
 } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
 pythonRunner.debug = true;
@@ -117,7 +117,7 @@ for i in range(100):
   await runCode(input);
 
   // Error (skulpt)
-  useEngine('skulpt');
+  setEngine('skulpt');
 
   i++;
   setOptions({ error: (arg) => setError(arg) });
