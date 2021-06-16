@@ -345,6 +345,10 @@ As you may have noticed, this project is still in progress. It may not be fully 
 
 - Add option for listening on loading of engines such that it is possible to get more control.
 
+### Version 1.2.5
+
+- Fix broken demo. This was luckily not affecting the package and documentation itself.
+
 ## Later
 
 - [ ] Include more Python runners.
