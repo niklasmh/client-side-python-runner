@@ -49,8 +49,8 @@ setOptions({
   error: null, // Throws an exception unless this is set to a function
   input: prompt, // How to feed the input(...)-function
   pythonVersion: 3,
-  storeStateBetweenRuns: true,
-  // If storeStateBetweenRuns is set (which is default), all variables will be transferred from the last execution into the next execution. It is possible to override this in the `runCode` function, if you want full control over the state.
+  loadVariablesBeforeRun: true,
+  storeVariablesAfterRun: true,
   onLoading: (engine) => {},
   onLoaded: (engine) => {},
 });
@@ -135,22 +135,44 @@ await loadEngine('pyodide');
 window.pyodide.runPython("print('I am using pyodide directly instead')");
 ```
 
+## Table of Contents
+
+- [Client-side Python runner](#client-side-python-runner)
+  - [Usage](#usage)
+  - [Using it as a loader only](#using-it-as-a-loader-only)
+  - [Table of Contents](#table-of-contents)
+  - [API](#api)
+    - [`async loadEngine`](#async-loadengine)
+    - [`async loadEngines`](#async-loadengines)
+    - [`async setEngine`](#async-setengine)
+    - [`async runCode`](#async-runcode)
+    - [`getOptions`](#getoptions)
+    - [`setOptions`](#setoptions)
+    - [`async getVariable`](#async-getvariable)
+    - [`async getVariables`](#async-getvariables)
+    - [`async setVariable`](#async-setvariable)
+    - [`async setVariables`](#async-setvariables)
+    - [`async clearVariable`](#async-clearvariable)
+    - [`async clearVariables`](#async-clearvariables)
+  - [Why](#why)
+  - [Map of different Python runners](#map-of-different-python-runners)
+  - [Versions](#versions)
+    - [First release (1.0.0)](#first-release-100)
+    - [Version 1.0.1](#version-101)
+    - [Version 1.1.0](#version-110)
+    - [Version 1.1.1](#version-111)
+    - [Version 1.1.5](#version-115)
+    - [Version 1.2.0](#version-120)
+    - [Version 1.2.1](#version-121)
+    - [Version 1.2.4](#version-124)
+    - [Version 1.2.5](#version-125)
+    - [Version 1.3.0](#version-130)
+  - [Later](#later)
+  - [Contribute](#contribute)
+
 ## API
 
 List of all exported functions:
-
-- [`loadEngine`](#async-loadengine)
-- [`loadEngines`](#async-loadengines)
-- [`setEngine`](#async-setengine)
-- [`runCode`](#async-runcode)
-- [`getOptions`](#getoptions)
-- [`setOptions`](#setoptions)
-- [`getVariable`](#async-getvariable)
-- [`getVariables`](#async-getvariables)
-- [`setVariable`](#async-setvariable)
-- [`setVariables`](#async-setvariables)
-- [`clearVariable`](#async-clearvariable)
-- [`clearVariables`](#async-clearvariables)
 
 ### `async loadEngine`
 
@@ -177,8 +199,8 @@ Parameters:
 ```typescript
 (code: string, options = {
   variables: object = {},
-  clearVariablesBeforeRun: boolean = false,
-  updateVariables: boolean = true,
+  loadVariablesBeforeRun: boolean = true,
+  storeVariablesAfterRun: boolean = true,
   use: string = currentEngine
 })
 ```
@@ -199,7 +221,8 @@ Parameters:
   error: function(error) = null,
   input: function(question) = window.prompt,
   pythonVersion: number = 3,
-  storeStateBetweenRuns: boolean = true,
+  loadVariablesBeforeRun: boolean = true,
+  storeVariablesAfterRun: boolean = true,
   onLoading: function = (engine) => {},
   onLoaded: function = (engine) => {},
 })
@@ -300,11 +323,9 @@ def f(a):
 f(100000)
 ```
 
-# Plan
+## Versions
 
-As you may have noticed, this project is still in progress. It may not be fully complete until late 2021, but I have made a working version - such that it is possible to get feedback and evaluate if this actually could be a useful project.
-
-## First release (1.0.0)
+### First release (1.0.0)
 
 - [x] Decide which Python runner to include. So far it looks like Pyodide, Skulpt. When these are added, it will be easier to include others later.
 - [x] Decide upon how the interface should work. E.g. one would probably need a run function, some way to output results and handle errors. What about loading libraries or manipulating DOM elements?
@@ -349,6 +370,15 @@ As you may have noticed, this project is still in progress. It may not be fully 
 
 - Fix broken demo. This was luckily not affecting the package and documentation itself.
 
+### Version 1.3.0
+
+- Add variable handling examples in the docs.
+- Update design on the docs.
+- Use monaco editor with python highlighting in the docs.
+- Fix line offset with Skulpt as of injecting variables before the code. Now defining the variables different.
+- Rename `storeStateBetweenRuns` to `loadVariablesBeforeRun` and `storeVariablesAfterRun` giving the user more control as well as understanding og what is actually happening when setting these.
+- Fix variable handling in Skulpt.
+
 ## Later
 
 - [ ] Include more Python runners.
@@ -367,4 +397,4 @@ To test out the project - such that you do not need to set up an environment for
 npm run examples
 ```
 
-Then go to [localhost:5000/docs/](http://localhost:5000/docs/) to test it out.
+Then go to [localhost:5000/docs/](http://localhost:5000/docs/) to test it out. Also remember to change the top of the `/docs/index.js` to import from `http://localhost:5000/index.js`, else the changes will not appear.

@@ -1,16 +1,40 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      data-name="vs/editor/editor.main"
+      href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css"
+    />
     <style>
+      body {
+        font-family: 'Open Sans';
+      }
+      #code {
+        height: 200px;
+        width: 520px;
+      }
       textarea {
         width: 420px;
         height: 240px;
+      }
+      .example {
+        display: flex;
+        flex-flow: row wrap;
+        gap: 8px;
       }
       pre {
         background-color: #0f03;
         border-radius: 4px;
         padding: 10px;
         position: relative;
+        flex: 1 1 350px;
+        white-space: pre-wrap;
       }
       pre:empty {
         display: none;
@@ -20,6 +44,7 @@
         font-weight: bold;
         position: absolute;
         right: 10px;
+        top: -16px;
       }
       pre + pre {
         background-color: #0003;
@@ -33,85 +58,215 @@
       pre + pre + pre::before {
         content: 'Error output';
       }
+      summary {
+        cursor: pointer;
+      }
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 4px;
+        background-color: #ddd;
+        color: #333;
+        padding: 8px 12px;
+        cursor: pointer;
+        margin: 8px 4px 0 0;
+      }
+      .monaco-editor {
+        overflow: hidden;
+        border-radius: 4px;
+      }
     </style>
   </head>
   <body>
     <h1>Sandbox:</h1>
 
-    <textarea id="code">
-for i in range(10):
-  print("i =", i)
-
-print("Done! Now, here comes an error:")
-
-undefinedvariable
-</textarea
-    >
-    <button onclick="window.runSkulptCode()">Run from skulpt</button>
-    <button onclick="window.runPyodideCode()">Run from pyodide</button>
+    <div id="code"></div>
+    <button onclick="window.runSkulptCode()">Run using skulpt</button>
+    <button onclick="window.runPyodideCode()">Run using pyodide</button>
     <button onclick="window.clearOutput()">Clear</button>
-    <pre id="input-0"></pre>
-    <pre id="output-0"></pre>
-    <pre id="error-0"></pre>
+    <div class="example">
+      <pre id="input-0"></pre>
+      <pre id="output-0"></pre>
+      <pre id="error-0"></pre>
+    </div>
 
     <h1>Examples:</h1>
 
     <h3>Loading example:</h3>
-    <pre id="input-1"></pre>
-    <pre id="output-1"></pre>
+    <div class="example">
+      <pre id="input-1"></pre>
+      <pre id="output-1"></pre>
+      <pre id="error-1"></pre>
+    </div>
 
     <h3>Pyodide example:</h3>
-    <pre id="input-2"></pre>
-    <pre id="output-2"></pre>
+    <div class="example">
+      <pre id="input-2"></pre>
+      <pre id="output-2"></pre>
+      <pre id="error-2"></pre>
+    </div>
 
     <h3>Skulpt example:</h3>
-    <pre id="input-3"></pre>
-    <pre id="output-3"></pre>
+    <div class="example">
+      <pre id="input-3"></pre>
+      <pre id="output-3"></pre>
+      <pre id="error-3"></pre>
+    </div>
 
-    <h1>Errors/Exceptions (pyodide):</h1>
+    <h1>More Pyodide examples:</h1>
 
-    <h3>Assertion error:</h3>
-    <pre id="input-4"></pre>
-    <pre id="output-4"></pre>
-    <pre id="error-4"></pre>
+    <details>
+      <summary>Error/Exception examples</summary>
 
-    <h3>Recursion error:</h3>
-    <pre id="input-5"></pre>
-    <pre id="output-5"></pre>
-    <pre id="error-5"></pre>
+      <h3>Assertion error:</h3>
+      <div class="example">
+        <pre id="input-4"></pre>
+        <pre id="output-4"></pre>
+        <pre id="error-4"></pre>
+      </div>
 
-    <h3>Overflow error:</h3>
-    <pre id="input-6"></pre>
-    <pre id="output-6"></pre>
-    <pre id="error-6"></pre>
+      <h3>Recursion error:</h3>
+      <div class="example">
+        <pre id="input-5"></pre>
+        <pre id="output-5"></pre>
+        <pre id="error-5"></pre>
+      </div>
 
-    <h3>Syntax error:</h3>
-    <pre id="input-7"></pre>
-    <pre id="output-7"></pre>
-    <pre id="error-7"></pre>
+      <h3>Overflow error:</h3>
+      <div class="example">
+        <pre id="input-6"></pre>
+        <pre id="output-6"></pre>
+        <pre id="error-6"></pre>
+      </div>
 
-    <h1>Errors/Exceptions (skulpt):</h1>
+      <h3>Syntax error:</h3>
+      <div class="example">
+        <pre id="input-7"></pre>
+        <pre id="output-7"></pre>
+        <pre id="error-7"></pre>
+      </div>
+    </details>
 
-    <h3>Assertion error:</h3>
-    <pre id="input-8"></pre>
-    <pre id="output-8"></pre>
-    <pre id="error-8"></pre>
+    <details>
+      <summary>Variable handling examples</summary>
 
-    <h3>Recursion error:</h3>
-    <pre id="input-9"></pre>
-    <pre id="output-9"></pre>
-    <pre id="error-9"></pre>
+      <h3>Store variable (storeVariablesAfterRun = true):</h3>
+      <div class="example">
+        <pre id="input-8"></pre>
+        <pre id="output-8"></pre>
+        <pre id="error-8"></pre>
+      </div>
 
-    <h3>Overflow error:</h3>
-    <pre id="input-10"></pre>
-    <pre id="output-10"></pre>
-    <pre id="error-10"></pre>
+      <h3>Get stored variable (loadVariablesBeforeRun = true):</h3>
+      <div class="example">
+        <pre id="input-9"></pre>
+        <pre id="output-9"></pre>
+        <pre id="error-9"></pre>
+      </div>
 
-    <h3>Syntax error:</h3>
-    <pre id="input-11"></pre>
-    <pre id="output-11"></pre>
-    <pre id="error-11"></pre>
+      <h3>Release variable (loadVariablesBeforeRun = false):</h3>
+      <div class="example">
+        <pre id="input-10"></pre>
+        <pre id="output-10"></pre>
+        <pre id="error-10"></pre>
+      </div>
+    </details>
+
+    <h1>More Skulpt examples:</h1>
+
+    <details>
+      <summary>Error/Exception examples</summary>
+
+      <h3>Assertion error:</h3>
+      <div class="example">
+        <pre id="input-101"></pre>
+        <pre id="output-101"></pre>
+        <pre id="error-101"></pre>
+      </div>
+
+      <h3>Recursion error:</h3>
+      <div class="example">
+        <pre id="input-102"></pre>
+        <pre id="output-102"></pre>
+        <pre id="error-102"></pre>
+      </div>
+
+      <h3>Overflow error:</h3>
+      <div class="example">
+        <pre id="input-103"></pre>
+        <pre id="output-103"></pre>
+        <pre id="error-103"></pre>
+      </div>
+
+      <h3>Syntax error:</h3>
+      <div class="example">
+        <pre id="input-104"></pre>
+        <pre id="output-104"></pre>
+        <pre id="error-104"></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>Variable handling examples</summary>
+
+      <h3>Store variable (storeVariablesAfterRun = true):</h3>
+      <div class="example">
+        <pre id="input-105"></pre>
+        <pre id="output-105"></pre>
+        <pre id="error-105"></pre>
+      </div>
+
+      <h3>Get stored variable (loadVariablesBeforeRun = true):</h3>
+      <div class="example">
+        <pre id="input-106"></pre>
+        <pre id="output-106"></pre>
+        <pre id="error-106"></pre>
+      </div>
+
+      <h3>Release variable (loadVariablesBeforeRun = false):</h3>
+      <div class="example">
+        <pre id="input-107"></pre>
+        <pre id="output-107"></pre>
+        <pre id="error-107"></pre>
+      </div>
+    </details>
 
     <script type="module" src="./index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/loader.min.js"></script>
+    <script>
+      // Based on https://jsfiddle.net/developit/bwgkr6uq/ which just works but is based on unpkg.com.
+      // Provided by loader.min.js.
+      require.config({
+        paths: {
+          vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs',
+        },
+      });
+      window.MonacoEnvironment = { getWorkerUrl: () => proxy };
+      let proxy = URL.createObjectURL(
+        new Blob(
+          [
+            `
+    self.MonacoEnvironment = {
+        baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min'
+    };
+    importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/base/worker/workerMain.min.js');
+`,
+          ],
+          { type: 'text/javascript' }
+        )
+      );
+      require(['vs/editor/editor.main'], function () {
+        let editor = monaco.editor.create(document.getElementById('code'), {
+          value: `for i in range(10):
+  print("i =", i)
+
+print("Done! Now, here comes an error:")
+
+undefinedvariable`,
+          language: 'python',
+          theme: 'vs-dark',
+        });
+      });
+    </script>
   </body>
 </html>
