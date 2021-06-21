@@ -216,7 +216,7 @@ window.pythonRunner.loadEngine = async function (
       window.pythonRunner.options.onLoading(engine);
 
       const scriptWasLoaded = await loadScript(
-        'https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js'
+        'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/pyodide.js'
       );
 
       if (!scriptWasLoaded) return false;
