@@ -146,8 +146,8 @@ window.pyodide.runPython("print('I am using pyodide directly instead')");
     - [`async loadEngines`](#async-loadengines)
     - [`async setEngine`](#async-setengine)
     - [`async runCode`](#async-runcode)
-    - [`getOptions`](#getoptions)
-    - [`setOptions`](#setoptions)
+    - [`async getOptions`](#async-getoptions)
+    - [`async setOptions`](#async-setoptions)
     - [`async getVariable`](#async-getvariable)
     - [`async getVariables`](#async-getvariables)
     - [`async setVariable`](#async-setvariable)
@@ -167,6 +167,7 @@ window.pyodide.runPython("print('I am using pyodide directly instead')");
     - [Version 1.2.4](#version-124)
     - [Version 1.2.5](#version-125)
     - [Version 1.3.0](#version-130)
+    - [Version 1.4.0](#version-140)
   - [Later](#later)
   - [Contribute](#contribute)
 
@@ -207,11 +208,11 @@ Parameters:
 
 Run Python code using the current engine (or default if not set). This function will also return the result of the last line if possible (e.g. if 'pyodide' is the current engine).
 
-### `getOptions`
+### `async getOptions`
 
 Get all options.
 
-### `setOptions`
+### `async setOptions`
 
 Parameters:
 
@@ -379,8 +380,17 @@ f(100000)
 - Rename `storeStateBetweenRuns` to `loadVariablesBeforeRun` and `storeVariablesAfterRun` giving the user more control as well as understanding og what is actually happening when setting these.
 - Fix variable handling in Skulpt.
 
+### Version 1.4.0
+
+- Refactor demo page. Easier to maintain.
+- Update Pyodide version.
+- Add Brython.
+- Add TypeScript support.
+
 ## Later
 
+- [ ] Add TypeScript support.
+- [ ] Support files.
 - [ ] Include more Python runners.
 - [ ] Make it possible to run them offline (by building them into the project somehow).
 - [ ] Add portals between JavaScript and Python. Useful for executing functions outside the Python scope and the other way around (if possible).
