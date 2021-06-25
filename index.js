@@ -1,5 +1,20 @@
 const defaultPythonEngine = 'pyodide';
 
+const URLS = {
+  pyodide: {
+    loader: 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/pyodide.js',
+    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/',
+  },
+  skulpt: {
+    loader: 'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt.min.js',
+    library: 'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt-stdlib.js',
+  },
+  brython: {
+    loader:
+      'https://cdn.jsdelivr.net/npm/brython-runner/lib/brython-runner.bundle.js',
+  },
+};
+
 window.pythonRunner = window.pythonRunner || {
   loadedEngines: {},
   loadingEngines: {},
@@ -172,12 +187,29 @@ function interpretErrorMessage(error, code, engine) {
       // As we now have the line number we can get the line too
       line = codeLines[lineNumber - 1];
     } catch (ex) {}
+  } else if (engine === 'brython') {
+    // Get error type
+    const trimmed = error.trim();
+    const lines = trimmed.split('\n');
+    const lastLine = lines.pop();
+    [type, ...message] = lastLine.split(': ');
+    message = message.join(': ');
+
+    try {
+      const lineInfo = trimmed.split(' line ')[1];
+      const extractLineNumber = new RegExp('^([0-9]+)');
+      lineNumber = parseInt(extractLineNumber.exec(lineInfo)[1]);
+
+      // As we now have the line number we can get the line too
+      line = codeLines[lineNumber - 1];
+    } catch (ex) {}
   }
 
   return {
     columnNumber,
     engine,
     error,
+    code,
     getNLinesAbove: (n) =>
       lineNumber === null
         ? []
@@ -195,12 +227,19 @@ window.pythonRunner.loadEngine = async function (
   engine = window.pythonRunner.currentEngine,
   { useEngine = false } = {}
 ) {
-  if (window.pythonRunner.debug) log('Loading ' + engine + '...');
   if (window.pythonRunner.hasEngine(engine)) {
     if (useEngine) window.pythonRunner.currentEngine = engine;
     return true;
   }
-  if (useEngine) window.pythonRunner.currentEngine = engine;
+
+  if (window.pythonRunner.debug) {
+    log('Loading ' + engine + '...');
+  }
+
+  if (useEngine) {
+    window.pythonRunner.currentEngine = engine;
+  }
+
   if (window.pythonRunner.isLoadingEngine(engine)) {
     try {
       await untilTheEngineIsLoaded(engine);
@@ -210,398 +249,523 @@ window.pythonRunner.loadEngine = async function (
     }
   }
 
+  window.pythonRunner.loadingEngines[engine] = [];
+  window.pythonRunner.options.onLoading(engine);
+
   switch (engine) {
-    case 'pyodide':
-      window.pythonRunner.loadingEngines.pyodide = [];
-      window.pythonRunner.options.onLoading(engine);
-
-      const scriptWasLoaded = await loadScript(
-        'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/pyodide.js'
-      );
-
+    case 'pyodide': {
+      const scriptWasLoaded = await loadScript(URLS.pyodide.loader);
       if (!scriptWasLoaded) return false;
+      await window.loadPyodide({ indexURL: URLS.pyodide.indexURL });
+      createPyodideRunner();
+      break;
+    }
 
-      await window.languagePluginLoader;
-
-      const prettyPrint = (arg) => {
-        switch (typeof arg) {
-          case 'object':
-            return JSON.stringify(arg);
-          case 'string':
-            return arg;
-          case 'number':
-            return arg;
-          default:
-            return arg;
-        }
-      };
-
-      window.pyodide.globals.print = (...args) => {
-        const kwargs = args.pop();
-        let sep = ' ';
-        let end = '\n';
-        if (typeof kwargs === 'object') {
-          if ('file' in kwargs) {
-            delete kwargs['file'];
-          }
-          if ('sep' in kwargs) {
-            sep = kwargs['sep'];
-            delete kwargs['sep'];
-            if (sep !== null) {
-              if (typeof sep !== 'string') {
-                throw new Error('sep must be None or a string');
-              }
-            }
-          }
-          if ('end' in kwargs) {
-            end = kwargs['end'];
-            delete kwargs['end'];
-            if (end !== null) {
-              if (typeof end !== 'string') {
-                throw new Error('end must be None or a string');
-              }
-            }
-          }
-          if (Object.keys(kwargs).length) {
-            throw new Error('invalid keyword arguments to print()');
-          }
-        }
-        const content = args.map((arg) => prettyPrint(arg)).join(sep) + end;
-        window.pythonRunner.options.output(content);
-      };
-
-      window.pythonRunner.loadedEngines[engine] = {
-        engine,
-        pyodide: window.pyodide,
-        predefinedVariables: [],
-        variables: {},
-        runCode: async (
-          code,
-          {
-            loadVariablesBeforeRun = window.pythonRunner.options
-              .loadVariablesBeforeRun,
-            storeVariablesAfterRun = window.pythonRunner.options
-              .storeVariablesAfterRun,
-            variables = null,
-          } = {}
-        ) => {
-          try {
-            if (!loadVariablesBeforeRun) {
-              window.pythonRunner.loadedEngines[engine].clearVariables();
-            }
-            if (variables) {
-              Object.entries(variables).forEach(([name, value]) => {
-                try {
-                  window.pyodide.globals[name] = value;
-                } catch (ex) {}
-              });
-            }
-            const result = window.pyodide.runPython(code);
-            // Update variables
-            if (storeVariablesAfterRun) {
-              window.pythonRunner.loadedEngines[engine].variables = Object.keys(
-                window.pyodide.runPython('vars()')
-              )
-                .filter(
-                  (name) =>
-                    !window.pythonRunner.loadedEngines[
-                      engine
-                    ].predefinedVariables.includes(name)
-                )
-                .reduce(
-                  (acc, name) => ({
-                    ...acc,
-                    [name]: window.pyodide.globals[name],
-                  }),
-                  {}
-                );
-            }
-            // Return the result
-            return result;
-          } catch (ex) {
-            if (typeof window.pythonRunner.options.error === 'function') {
-              window.pythonRunner.options.error(
-                interpretErrorMessage(ex, code, engine)
-              );
-            } else {
-              throw interpretErrorMessage(ex, code, engine);
-            }
-          }
-        },
-        getVariable: async (name) => window.pyodide.globals[name],
-        getVariables: async (
-          includeValues = true,
-          filter = null,
-          onlyShowNewVariables = true
-        ) => {
-          let variables = Object.entries(window.pyodide.runPython('vars()'));
-          if (onlyShowNewVariables) {
-            variables = variables.filter(
-              ([name]) =>
-                !window.pythonRunner.loadedEngines[
-                  engine
-                ].predefinedVariables.includes(name)
-            );
-          }
-          if (filter) {
-            if (typeof filter === 'function') {
-              variables = variables.filter(([name]) => filter(name));
-            } else {
-              if (Array.isArray(filter)) {
-                variables = variables.filter(([name]) => filter.includes(name));
-              } else {
-                variables = variables.filter(([name]) => filter.test(name));
-              }
-            }
-          }
-          if (includeValues) {
-            return variables.reduce(
-              (acc, [name, value]) => ({ ...acc, [name]: value }),
-              {}
-            );
-          }
-          return variables.map(([name]) => name);
-        },
-        setVariable: async (name, value) => {
-          try {
-            window.pyodide.globals[name] = value;
-          } catch (ex) {}
-          window.pythonRunner.loadedEngines[engine].variables[name] = value;
-        },
-        setVariables: async (variables) => {
-          Object.entries(variables).forEach(([name, value]) => {
-            try {
-              window.pyodide.globals[name] = value;
-            } catch (ex) {}
-            window.pythonRunner.loadedEngines[engine].variables[name] = value;
-          });
-        },
-        clearVariable: async (name) => {
-          try {
-            if (typeof window.pyodide.globals[name] !== 'undefined') {
-              delete window.pyodide.globals[name];
-            }
-          } catch (ex) {}
-          if (name in window.pythonRunner.loadedEngines[engine].variables) {
-            delete window.pythonRunner.loadedEngines[engine].variables[name];
-          }
-        },
-        clearVariables: async () => {
-          for (const name of Object.keys(
-            window.pythonRunner.loadedEngines[engine].variables
-          )) {
-            try {
-              if (typeof window.pyodide.globals[name] !== 'undefined') {
-                delete window.pyodide.globals[name];
-              }
-            } catch (ex) {}
-          }
-          window.pythonRunner.loadedEngines[engine].variables = {};
-        },
-      };
-      window.pythonRunner.loadedEngines[engine].predefinedVariables =
-        Object.keys(window.pyodide.runPython('vars()'));
-      if (window.pythonRunner.debug)
-        log('Successfully loaded ' + engine + '!', 'lime');
-      for (let job of window.pythonRunner.loadingEngines[engine]) {
-        await job();
-      }
-      delete window.pythonRunner.loadingEngines[engine];
-      window.pythonRunner.options.onLoaded(engine);
-      return true;
-    case 'skulpt':
-      window.pythonRunner.loadingEngines.skulpt = [];
-      window.pythonRunner.options.onLoading(engine);
-
-      const script1WasLoaded = await loadScript(
-        'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt.min.js'
-      );
-      const script2WasLoaded = await loadScript(
-        'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt-stdlib.js'
-      );
-
+    case 'skulpt': {
+      const script1WasLoaded = await loadScript(URLS.skulpt.loader);
+      const script2WasLoaded = await loadScript(URLS.skulpt.library);
       if (!script1WasLoaded || !script2WasLoaded) return false;
+      createSkulptRunner();
+      break;
+    }
 
-      function builtinRead(x) {
-        if (
-          window.Sk.builtinFiles === undefined ||
-          window.Sk.builtinFiles['files'][x] === undefined
-        )
-          throw "File not found: '" + x + "'";
-        return window.Sk.builtinFiles['files'][x];
-      }
-
-      window.pythonRunner.loadedEngines[engine] = {
-        engine,
-        skulpt: window.Sk,
-        predefinedVariables: [],
-        variables: {},
-        runCode: async (
-          code,
-          {
-            canvas = null,
-            loadVariablesBeforeRun = window.pythonRunner.options
-              .loadVariablesBeforeRun,
-            storeVariablesAfterRun = window.pythonRunner.options
-              .storeVariablesAfterRun,
-            variables = null,
-          } = {}
-        ) => {
-          if (canvas) {
-            (
-              window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})
-            ).target = canvas;
-          }
-          try {
-            if (!loadVariablesBeforeRun) {
-              window.pythonRunner.loadedEngines[engine].clearVariables();
-            } else {
-              Object.entries(
-                window.pythonRunner.loadedEngines[engine].variables
-              ).forEach(
-                ([name, value]) =>
-                  (window.Sk.builtins[name] = window.Sk.ffi.remapToPy(value))
-              );
-            }
-            if (variables) {
-              Object.entries(variables).forEach(
-                ([name, value]) =>
-                  (window.Sk.builtins[name] = window.Sk.ffi.remapToPy(value))
-              );
-            }
-            await new Promise(async (resolve, reject) => {
-              window.Sk.configure({
-                output: window.pythonRunner.options.output,
-                read: builtinRead,
-                __future__:
-                  window.pythonRunner.pythonVersion === 2
-                    ? window.Sk.python2
-                    : window.Sk.python3,
-              });
-              try {
-                await window.Sk.importMainWithBody('<stdin>', false, code);
-                resolve();
-              } catch (err) {
-                reject(err.toString());
-              }
-            });
-            // Update variables
-            if (storeVariablesAfterRun) {
-              window.pythonRunner.loadedEngines[engine].variables = {
-                ...window.pythonRunner.loadedEngines[engine].variables,
-                ...Object.entries(window.Sk.globals)
-                  .filter(
-                    ([name]) =>
-                      !window.pythonRunner.loadedEngines[
-                        engine
-                      ].predefinedVariables.includes(name)
-                  )
-                  .reduce(
-                    (acc, [name, value]) => ({
-                      ...acc,
-                      [name]: value.v,
-                    }),
-                    {}
-                  ),
-              };
-            }
-          } catch (ex) {
-            if (typeof window.pythonRunner.options.error === 'function') {
-              window.pythonRunner.options.error(
-                interpretErrorMessage(ex, code, engine)
-              );
-            } else {
-              throw interpretErrorMessage(ex, code, engine);
-            }
-          }
-
-          // Should not return anything
-        },
-        getVariable: async (name) => {
-          return window.Sk.ffi.remapToJs(window.Sk.globals[name]);
-        },
-        getVariables: async (
-          includeValues = true,
-          filter = null,
-          onlyShowNewVariables = true
-        ) => {
-          if (onlyShowNewVariables && filter === null) {
-            if (includeValues) {
-              return window.pythonRunner.loadedEngines[engine].variables;
-            }
-            return Object.keys(
-              window.pythonRunner.loadedEngines[engine].variables
-            );
-          } else {
-            let variables = Object.entries(window.Sk.globals);
-            if (onlyShowNewVariables) {
-              variables = variables.filter(
-                ([name]) =>
-                  !window.pythonRunner.loadedEngines[
-                    engine
-                  ].predefinedVariables.includes(name)
-              );
-            }
-            if (filter) {
-              if (typeof filter === 'function') {
-                variables = variables.filter(([name]) => filter(name));
-              } else {
-                if (Array.isArray(filter)) {
-                  variables = variables.filter(([name]) =>
-                    filter.includes(name)
-                  );
-                } else {
-                  variables = variables.filter(([name]) => filter.test(name));
-                }
-              }
-            }
-            if (includeValues) {
-              return variables.reduce(
-                (acc, [name, value]) => ({ ...acc, [name]: value.v }),
-                {}
-              );
-            }
-            return variables.map(([name]) => name);
-          }
-        },
-        setVariable: async (name, value) => {
-          window.pythonRunner.loadedEngines[engine].variables[name] = value;
-        },
-        setVariables: async (variables) => {
-          Object.entries(variables).forEach(([name, value]) => {
-            window.pythonRunner.loadedEngines[engine].variables[name] = value;
-          });
-        },
-        clearVariable: async (name) => {
-          delete window.Sk.builtins[name];
-          if (name in window.pythonRunner.loadedEngines[engine].variables) {
-            delete window.pythonRunner.loadedEngines[engine].variables[name];
-          }
-        },
-        clearVariables: async () => {
-          Object.keys(
-            window.pythonRunner.loadedEngines[engine].variables
-          ).forEach((name) => delete window.Sk.builtins[name]);
-          window.pythonRunner.loadedEngines[engine].variables = {};
-        },
-      };
-      window.pythonRunner.loadedEngines[engine].runCode('1');
-      window.pythonRunner.loadedEngines[engine].predefinedVariables =
-        Object.keys(window.Sk.globals);
-      if (window.pythonRunner.debug)
-        log('Successfully loaded ' + engine + '!', 'lime');
-      for (let job of window.pythonRunner.loadingEngines[engine]) {
-        await job();
-      }
-      delete window.pythonRunner.loadingEngines[engine];
-      window.pythonRunner.options.onLoaded(engine);
-      return true;
+    case 'brython': {
+      const scriptWasLoaded = await loadScript(URLS.brython.loader);
+      if (!scriptWasLoaded) return false;
+      createBrythonRunner();
+      break;
+    }
 
     default:
       if (window.pythonRunner.debug) log('Could not find ' + engine);
       return false;
   }
+
+  if (window.pythonRunner.debug) {
+    log('Successfully loaded ' + engine + '!', 'lime');
+  }
+
+  for (let job of window.pythonRunner.loadingEngines[engine]) {
+    await job();
+  }
+
+  delete window.pythonRunner.loadingEngines[engine];
+  window.pythonRunner.options.onLoaded(engine);
+
+  return true;
 };
+
+function createPyodideRunner() {
+  const engine = 'pyodide';
+
+  const prettyPrint = (arg) => {
+    switch (typeof arg) {
+      case 'object':
+        return JSON.stringify(arg);
+      case 'string':
+        return arg;
+      case 'number':
+        return arg;
+      default:
+        return arg;
+    }
+  };
+
+  window.pyodide.globals.set('print', (...args) => {
+    let sep = ' ';
+    let end = '\n';
+    if (typeof args[args.length - 1] === 'object') {
+      const kwargs = args.pop();
+      if ('file' in kwargs) {
+        delete kwargs['file'];
+      }
+      if ('sep' in kwargs) {
+        sep = kwargs['sep'];
+        delete kwargs['sep'];
+        if (sep !== null) {
+          if (typeof sep !== 'string') {
+            throw new Error('sep must be None or a string');
+          }
+        }
+      }
+      if ('end' in kwargs) {
+        end = kwargs['end'];
+        delete kwargs['end'];
+        if (end !== null) {
+          if (typeof end !== 'string') {
+            throw new Error('end must be None or a string');
+          }
+        }
+      }
+      if (Object.keys(kwargs).length) {
+        delete kwargs['file'];
+        delete kwargs['flush'];
+        if (Object.keys(kwargs).length) {
+          throw new Error('invalid keyword arguments to print()');
+        }
+      }
+    }
+    const content = args.map((arg) => prettyPrint(arg)).join(sep) + end;
+    window.pythonRunner.options.output(content);
+  });
+
+  window.pythonRunner.loadedEngines[engine] = {
+    engine,
+    pyodide: window.pyodide,
+    predefinedVariables: [],
+    variables: {},
+    runCode: async (code, options = {}) => {
+      try {
+        const {
+          loadVariablesBeforeRun = window.pythonRunner.options
+            .loadVariablesBeforeRun,
+          storeVariablesAfterRun = window.pythonRunner.options
+            .storeVariablesAfterRun,
+          variables = null,
+        } = options;
+
+        if (!loadVariablesBeforeRun) {
+          await window.pythonRunner.loadedEngines[engine].clearVariables();
+        }
+
+        // Add new variables
+        if (variables) {
+          Object.entries(variables).forEach(([name, value]) => {
+            try {
+              window.pyodide.globals.set(name, value);
+            } catch (ex) {}
+          });
+        }
+
+        const result = window.pyodide.runPython(code);
+
+        if (storeVariablesAfterRun) {
+          window.pythonRunner.loadedEngines[engine].variables = Object.keys(
+            window.pyodide.runPython('vars()')
+          )
+            .filter(
+              (name) =>
+                !window.pythonRunner.loadedEngines[
+                  engine
+                ].predefinedVariables.includes(name)
+            )
+            .reduce(
+              (acc, name) => ({
+                ...acc,
+                [name]: window.pyodide.globals.get(name),
+              }),
+              {}
+            );
+        }
+        // Return the result
+        return result;
+      } catch (ex) {
+        if (typeof window.pythonRunner.options.error === 'function') {
+          window.pythonRunner.options.error(
+            interpretErrorMessage(ex, code, engine)
+          );
+        } else {
+          throw interpretErrorMessage(ex, code, engine);
+        }
+      }
+    },
+
+    getVariable: async (name) => window.pyodide.globals.get(name),
+
+    getVariables: async (
+      includeValues = true,
+      filter = null,
+      onlyShowNewVariables = true
+    ) => {
+      let variables = Object.entries(window.pyodide.runPython('vars()'));
+      if (onlyShowNewVariables) {
+        variables = variables.filter(
+          ([name]) =>
+            !window.pythonRunner.loadedEngines[
+              engine
+            ].predefinedVariables.includes(name)
+        );
+      }
+      if (filter) {
+        if (typeof filter === 'function') {
+          variables = variables.filter(([name]) => filter(name));
+        } else {
+          if (Array.isArray(filter)) {
+            variables = variables.filter(([name]) => filter.includes(name));
+          } else {
+            variables = variables.filter(([name]) => filter.test(name));
+          }
+        }
+      }
+      if (includeValues) {
+        return variables.reduce(
+          (acc, [name, value]) => ({ ...acc, [name]: value }),
+          {}
+        );
+      }
+      return variables.map(([name]) => name);
+    },
+
+    setVariable: async (name, value) => {
+      try {
+        window.pyodide.globals.set(name, value);
+      } catch (ex) {}
+      window.pythonRunner.loadedEngines[engine].variables[name] = value;
+    },
+
+    setVariables: async (variables) => {
+      Object.entries(variables).forEach(([name, value]) => {
+        try {
+          window.pyodide.globals.set(name, value);
+        } catch (ex) {}
+        window.pythonRunner.loadedEngines[engine].variables[name] = value;
+      });
+    },
+
+    clearVariable: async (name) => {
+      try {
+        if (typeof window.pyodide.globals.get(name) !== 'undefined') {
+          window.pyodide.globals.delete(name);
+        }
+      } catch (ex) {}
+      if (name in window.pythonRunner.loadedEngines[engine].variables) {
+        delete window.pythonRunner.loadedEngines[engine].variables[name];
+      }
+    },
+
+    clearVariables: async () => {
+      for (const name of Object.keys(
+        window.pythonRunner.loadedEngines[engine].variables
+      )) {
+        try {
+          if (typeof window.pyodide.globals.get(name) !== 'undefined') {
+            window.pyodide.globals.delete(name);
+          }
+        } catch (ex) {}
+      }
+      window.pythonRunner.loadedEngines[engine].variables = {};
+    },
+  };
+
+  window.pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
+    window.pyodide.runPython('vars()')
+  );
+}
+
+function createSkulptRunner() {
+  const engine = 'skulpt';
+
+  function builtinRead(x) {
+    if (
+      window.Sk.builtinFiles === undefined ||
+      window.Sk.builtinFiles['files'][x] === undefined
+    )
+      throw "File not found: '" + x + "'";
+    return window.Sk.builtinFiles['files'][x];
+  }
+
+  window.pythonRunner.loadedEngines[engine] = {
+    engine,
+    skulpt: window.Sk,
+    predefinedVariables: [],
+    variables: {},
+    runCode: async (code, options = {}) => {
+      const {
+        canvas = null,
+        loadVariablesBeforeRun = window.pythonRunner.options
+          .loadVariablesBeforeRun,
+        storeVariablesAfterRun = window.pythonRunner.options
+          .storeVariablesAfterRun,
+        variables = null,
+      } = options;
+
+      if (canvas) {
+        (window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})).target =
+          canvas;
+      }
+      try {
+        if (loadVariablesBeforeRun) {
+          Object.entries(
+            window.pythonRunner.loadedEngines[engine].variables
+          ).forEach(
+            ([name, value]) =>
+              (window.Sk.builtins[name] = window.Sk.ffi.remapToPy(value))
+          );
+        } else {
+          await window.pythonRunner.loadedEngines[engine].clearVariables();
+        }
+
+        // Add new variables
+        if (variables) {
+          Object.entries(variables).forEach(
+            ([name, value]) =>
+              (window.Sk.builtins[name] = window.Sk.ffi.remapToPy(value))
+          );
+        }
+
+        await new Promise(async (resolve, reject) => {
+          window.Sk.configure({
+            output: window.pythonRunner.options.output,
+            read: builtinRead,
+            __future__:
+              window.pythonRunner.pythonVersion === 2
+                ? window.Sk.python2
+                : window.Sk.python3,
+          });
+          try {
+            await window.Sk.importMainWithBody('<stdin>', false, code);
+            resolve();
+          } catch (err) {
+            reject(err.toString());
+          }
+        });
+
+        if (storeVariablesAfterRun) {
+          window.pythonRunner.loadedEngines[engine].variables = {
+            ...window.pythonRunner.loadedEngines[engine].variables,
+            ...Object.entries(window.Sk.globals)
+              .filter(
+                ([name]) =>
+                  !window.pythonRunner.loadedEngines[
+                    engine
+                  ].predefinedVariables.includes(name)
+              )
+              .reduce(
+                (acc, [name, value]) => ({
+                  ...acc,
+                  [name]: value.v,
+                }),
+                {}
+              ),
+          };
+        }
+      } catch (ex) {
+        if (typeof window.pythonRunner.options.error === 'function') {
+          window.pythonRunner.options.error(
+            interpretErrorMessage(ex, code, engine)
+          );
+        } else {
+          throw interpretErrorMessage(ex, code, engine);
+        }
+      }
+    },
+
+    getVariable: async (name) => {
+      return window.Sk.ffi.remapToJs(window.Sk.globals[name]);
+    },
+
+    getVariables: async (
+      includeValues = true,
+      filter = null,
+      onlyShowNewVariables = true
+    ) => {
+      if (onlyShowNewVariables && filter === null) {
+        if (includeValues) {
+          return window.pythonRunner.loadedEngines[engine].variables;
+        }
+        return Object.keys(window.pythonRunner.loadedEngines[engine].variables);
+      } else {
+        let variables = Object.entries(window.Sk.globals);
+        if (onlyShowNewVariables) {
+          variables = variables.filter(
+            ([name]) =>
+              !window.pythonRunner.loadedEngines[
+                engine
+              ].predefinedVariables.includes(name)
+          );
+        }
+        if (filter) {
+          if (typeof filter === 'function') {
+            variables = variables.filter(([name]) => filter(name));
+          } else {
+            if (Array.isArray(filter)) {
+              variables = variables.filter(([name]) => filter.includes(name));
+            } else {
+              variables = variables.filter(([name]) => filter.test(name));
+            }
+          }
+        }
+        if (includeValues) {
+          return variables.reduce(
+            (acc, [name, value]) => ({ ...acc, [name]: value.v }),
+            {}
+          );
+        }
+        return variables.map(([name]) => name);
+      }
+    },
+
+    setVariable: async (name, value) => {
+      window.pythonRunner.loadedEngines[engine].variables[name] = value;
+    },
+
+    setVariables: async (variables) => {
+      Object.entries(variables).forEach(([name, value]) => {
+        window.pythonRunner.loadedEngines[engine].variables[name] = value;
+      });
+    },
+
+    clearVariable: async (name) => {
+      delete window.Sk.builtins[name];
+      if (name in window.pythonRunner.loadedEngines[engine].variables) {
+        delete window.pythonRunner.loadedEngines[engine].variables[name];
+      }
+    },
+
+    clearVariables: async () => {
+      Object.keys(window.pythonRunner.loadedEngines[engine].variables).forEach(
+        (name) => delete window.Sk.builtins[name]
+      );
+      window.pythonRunner.loadedEngines[engine].variables = {};
+    },
+  };
+
+  window.pythonRunner.loadedEngines[engine].runCode('1');
+  window.pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
+    window.Sk.globals
+  );
+}
+
+async function createBrythonRunner() {
+  const engine = 'brython';
+  await new Promise((resolve) => {
+    const runner = new BrythonRunner({
+      onInit: () => {
+        resolve();
+      },
+      stdout: {
+        write: (arg) => window.pythonRunner.options.output(arg),
+        flush() {},
+      },
+      stderr: {
+        write: (ex) => {
+          const code = window.pythonRunner.loadedEngines[engine].currentCode;
+          if (typeof window.pythonRunner.options.error === 'function') {
+            window.pythonRunner.options.error(
+              interpretErrorMessage(ex, code, engine)
+            );
+          } else {
+            throw interpretErrorMessage(ex, code, engine);
+          }
+        },
+        flush() {},
+      },
+      stdin: {
+        readline: async () => await window.pythonRunner.options.input,
+      },
+    });
+
+    window.pythonRunner.loadedEngines[engine] = {
+      engine,
+      brython: runner,
+      predefinedVariables: [],
+      variables: {},
+
+      runCode: async (code, options = {}) => {
+        const {
+          loadVariablesBeforeRun = window.pythonRunner.options
+            .loadVariablesBeforeRun,
+          storeVariablesAfterRun = window.pythonRunner.options
+            .storeVariablesAfterRun,
+          variables = null,
+        } = options;
+
+        if (loadVariablesBeforeRun) {
+          // TODO
+        } else {
+          await window.pythonRunner.loadedEngines[engine].clearVariables();
+        }
+
+        // Add new variables
+        if (variables) {
+          Object.entries(variables).forEach(([name, value]) => {
+            try {
+              // TODO
+            } catch (ex) {}
+          });
+        }
+
+        window.pythonRunner.loadedEngines[engine].currentCode = code;
+        await runner.runCode(code);
+
+        if (storeVariablesAfterRun) {
+          // TODO
+        }
+      },
+
+      getVariable: async (name) => '', // TODO
+
+      getVariables: async (
+        includeValues = true,
+        filter = null,
+        onlyShowNewVariables = true
+      ) => {
+        // TODO
+        return {};
+      },
+
+      setVariable: async (name, value) => {
+        // TODO
+      },
+
+      setVariables: async (variables) => {
+        // TODO
+      },
+
+      clearVariable: async (name) => {
+        // TODO
+      },
+
+      clearVariables: async () => {
+        // TODO
+      },
+    };
+
+    window.pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
+      {}
+    );
+  });
+}
 
 window.pythonRunner.loadEngines = async function (engines) {
   return await Promise.all(engines.map(window.pythonRunner.loadEngine));
@@ -618,7 +782,10 @@ window.pythonRunner.runCode = async function (code, userOptions = {}) {
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].runCode(code);
+  return await window.pythonRunner.loadedEngines[specificEngine].runCode(
+    code,
+    userOptions
+  );
 };
 
 window.pythonRunner.getVariable = async function (name, userOptions = {}) {
