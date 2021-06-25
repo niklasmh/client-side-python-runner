@@ -7,266 +7,541 @@
       rel="stylesheet"
     />
     <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
       rel="stylesheet"
-      data-name="vs/editor/editor.main"
-      href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/themes/prism.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://raw.githack.com/PrismJS/prism-themes/master/themes/prism-vsc-dark-plus.css"
+      rel="stylesheet"
     />
     <style>
       body {
         font-family: 'Open Sans';
-      }
-      #code {
-        height: 200px;
-        width: 520px;
-      }
-      textarea {
-        width: 420px;
-        height: 240px;
-      }
-      .example {
-        display: flex;
-        flex-flow: row wrap;
-        gap: 8px;
-      }
-      pre {
-        background-color: #0f03;
-        border-radius: 4px;
-        padding: 10px;
-        position: relative;
-        flex: 1 1 350px;
-        white-space: pre-wrap;
-      }
-      pre:empty {
-        display: none;
-      }
-      pre::before {
-        content: 'JavaScript code';
-        font-weight: bold;
-        position: absolute;
-        right: 10px;
-        top: -16px;
-      }
-      pre + pre {
-        background-color: #0003;
-      }
-      pre + pre::before {
-        content: 'Python output';
-      }
-      pre + pre + pre {
-        background-color: #f003;
-      }
-      pre + pre + pre::before {
-        content: 'Error output';
-      }
-      summary {
-        cursor: pointer;
-      }
-      button {
-        appearance: none;
-        border: none;
-        border-radius: 4px;
-        background-color: #ddd;
-        color: #333;
-        padding: 8px 12px;
-        cursor: pointer;
-        margin: 8px 4px 0 0;
+        background-color: #1e1e1eee;
       }
       .monaco-editor {
         overflow: hidden;
-        border-radius: 4px;
+        border-radius: 0.375rem;
+      }
+      .token.operator,
+      .token.entity,
+      .token.url,
+      .language-css .token.string,
+      .style .token.string {
+        background: none;
       }
     </style>
   </head>
-  <body>
-    <h1>Sandbox:</h1>
+  <body class="min-h-screen py-1 text-gray-300">
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.23.0/components/prism-json.min.js"></script>
+    <script
+      src="https://unpkg.com/react@17/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/prop-types@15.7.2/prop-types.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/state-local@1.0.7/lib/umd/state-local.min.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/@monaco-editor/loader@0.1.2/lib/umd/monaco-loader.min.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/@monaco-editor/react@4.0.0/lib/umd/monaco-react.min.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel" data-type="module">
+      import pythonRunner, {
+        loadEngines,
+        runCode,
+        setOptions,
+        setEngine,
+        //} from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
+        // Use this to get local changes if contributing:
+      } from '/index.js';
 
-    <div id="code"></div>
-    <button onclick="window.runSkulptCode()">Run using skulpt</button>
-    <button onclick="window.runPyodideCode()">Run using pyodide</button>
-    <button onclick="window.clearOutput()">Clear</button>
-    <div class="example">
-      <pre id="input-0"></pre>
-      <pre id="output-0"></pre>
-      <pre id="error-0"></pre>
-    </div>
+      pythonRunner.debug = true;
 
-    <h1>Examples:</h1>
-
-    <h3>Loading example:</h3>
-    <div class="example">
-      <pre id="input-1"></pre>
-      <pre id="output-1"></pre>
-      <pre id="error-1"></pre>
-    </div>
-
-    <h3>Pyodide example:</h3>
-    <div class="example">
-      <pre id="input-2"></pre>
-      <pre id="output-2"></pre>
-      <pre id="error-2"></pre>
-    </div>
-
-    <h3>Skulpt example:</h3>
-    <div class="example">
-      <pre id="input-3"></pre>
-      <pre id="output-3"></pre>
-      <pre id="error-3"></pre>
-    </div>
-
-    <h1>More Pyodide examples:</h1>
-
-    <details>
-      <summary>Error/Exception examples</summary>
-
-      <h3>Assertion error:</h3>
-      <div class="example">
-        <pre id="input-4"></pre>
-        <pre id="output-4"></pre>
-        <pre id="error-4"></pre>
-      </div>
-
-      <h3>Recursion error:</h3>
-      <div class="example">
-        <pre id="input-5"></pre>
-        <pre id="output-5"></pre>
-        <pre id="error-5"></pre>
-      </div>
-
-      <h3>Overflow error:</h3>
-      <div class="example">
-        <pre id="input-6"></pre>
-        <pre id="output-6"></pre>
-        <pre id="error-6"></pre>
-      </div>
-
-      <h3>Syntax error:</h3>
-      <div class="example">
-        <pre id="input-7"></pre>
-        <pre id="output-7"></pre>
-        <pre id="error-7"></pre>
-      </div>
-    </details>
-
-    <details>
-      <summary>Variable handling examples</summary>
-
-      <h3>Store variable (storeVariablesAfterRun = true):</h3>
-      <div class="example">
-        <pre id="input-8"></pre>
-        <pre id="output-8"></pre>
-        <pre id="error-8"></pre>
-      </div>
-
-      <h3>Get stored variable (loadVariablesBeforeRun = true):</h3>
-      <div class="example">
-        <pre id="input-9"></pre>
-        <pre id="output-9"></pre>
-        <pre id="error-9"></pre>
-      </div>
-
-      <h3>Release variable (loadVariablesBeforeRun = false):</h3>
-      <div class="example">
-        <pre id="input-10"></pre>
-        <pre id="output-10"></pre>
-        <pre id="error-10"></pre>
-      </div>
-    </details>
-
-    <h1>More Skulpt examples:</h1>
-
-    <details>
-      <summary>Error/Exception examples</summary>
-
-      <h3>Assertion error:</h3>
-      <div class="example">
-        <pre id="input-101"></pre>
-        <pre id="output-101"></pre>
-        <pre id="error-101"></pre>
-      </div>
-
-      <h3>Recursion error:</h3>
-      <div class="example">
-        <pre id="input-102"></pre>
-        <pre id="output-102"></pre>
-        <pre id="error-102"></pre>
-      </div>
-
-      <h3>Overflow error:</h3>
-      <div class="example">
-        <pre id="input-103"></pre>
-        <pre id="output-103"></pre>
-        <pre id="error-103"></pre>
-      </div>
-
-      <h3>Syntax error:</h3>
-      <div class="example">
-        <pre id="input-104"></pre>
-        <pre id="output-104"></pre>
-        <pre id="error-104"></pre>
-      </div>
-    </details>
-
-    <details>
-      <summary>Variable handling examples</summary>
-
-      <h3>Store variable (storeVariablesAfterRun = true):</h3>
-      <div class="example">
-        <pre id="input-105"></pre>
-        <pre id="output-105"></pre>
-        <pre id="error-105"></pre>
-      </div>
-
-      <h3>Get stored variable (loadVariablesBeforeRun = true):</h3>
-      <div class="example">
-        <pre id="input-106"></pre>
-        <pre id="output-106"></pre>
-        <pre id="error-106"></pre>
-      </div>
-
-      <h3>Release variable (loadVariablesBeforeRun = false):</h3>
-      <div class="example">
-        <pre id="input-107"></pre>
-        <pre id="output-107"></pre>
-        <pre id="error-107"></pre>
-      </div>
-    </details>
-
-    <script type="module" src="./index.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/loader.min.js"></script>
-    <script>
-      // Based on https://jsfiddle.net/developit/bwgkr6uq/ which just works but is based on unpkg.com.
-      // Provided by loader.min.js.
-      require.config({
-        paths: {
-          vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs',
-        },
-      });
-      window.MonacoEnvironment = { getWorkerUrl: () => proxy };
-      let proxy = URL.createObjectURL(
-        new Blob(
-          [
-            `
-    self.MonacoEnvironment = {
-        baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min'
-    };
-    importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/base/worker/workerMain.min.js');
-`,
+      const examples = {
+        loading: {
+          title: 'Basic examples',
+          sections: [
+            {
+              title: 'Loading example',
+              jsCode: `// This is not necessary unless you want to
+// load the engines separately from the execution
+await loadEngines({input})`,
+              input: `['skulpt', 'pyodide', 'brython']`,
+              engine: 'none',
+              showDebug: true,
+              run: async (input) => {
+                await loadEngines(['skulpt', 'pyodide', 'brython']);
+              },
+            },
+            {
+              title: 'Pyodide example',
+              jsCode: `await setEngine('pyodide');
+await runCode({input})`,
+              input: `print("printed from pyodide")`,
+              engine: 'pyodide',
+              run: async (input) => {
+                await setEngine('pyodide');
+                await runCode(input);
+              },
+            },
+            {
+              title: 'Skulpt example',
+              jsCode: `await useEngine('skulpt')
+await runCode({input})`,
+              input: `print("printed from skulpt")`,
+              engine: 'skulpt',
+              run: async (input) => {
+                await setEngine('skulpt');
+                await runCode(input);
+              },
+            },
+            {
+              title: 'Brython example',
+              jsCode: `await useEngine('brython')
+await runCode({input})`,
+              input: `print("printed from brython")`,
+              engine: 'brython',
+              run: async (input) => {
+                await setEngine('brython');
+                await runCode(input);
+              },
+            },
           ],
-          { type: 'text/javascript' }
-        )
-      );
-      require(['vs/editor/editor.main'], function () {
-        let editor = monaco.editor.create(document.getElementById('code'), {
-          value: `for i in range(10):
+        },
+        errors: {
+          title: 'Error/Exception examples',
+          sections: [
+            {
+              title: 'Assertion error',
+              jsCode: `await runCode({input})`,
+              input: `assert 1 == 2, "This is the feedback"`,
+              run: async (input) => {
+                await runCode(input);
+              },
+            },
+            {
+              title: 'Recursion error',
+              jsCode: `await runCode({input})`,
+              input: `
+def f():
+  f()
+f()
+`,
+              run: async (input) => {
+                await runCode(input);
+              },
+            },
+            {
+              title: 'Overflow error',
+              jsCode: `await runCode({input})`,
+              input: `
+i=1
+f = 3.0**i
+for i in range(100):
+  print(i, f)
+  f = f ** 2
+`,
+              run: async (input) => {
+                await runCode(input);
+              },
+            },
+            {
+              title: 'Syntax error',
+              jsCode: `await runCode({input})`,
+              input: `a +`,
+              run: async (input) => {
+                await runCode(input);
+              },
+            },
+          ],
+        },
+        variables: {
+          title: 'Variable management examples',
+          sections: [
+            {
+              title: 'Store variables after run',
+              jsCode: `await runCode({input}, { storeVariablesAfterRun: true })`,
+              input: `
+transfer_this = "test"
+print("Should store 'transfer_this' to the next execution")
+`,
+              run: async (input) => {
+                await runCode(input, { storeVariablesAfterRun: true });
+              },
+            },
+            {
+              title: 'Load variables into run',
+              jsCode: `await runCode({input}, { loadVariablesBeforeRun: true })`,
+              input: `
+try:
+  transfer_this
+except NameError:
+  raise Exception("'transfer_this' did not exist, which is UNEXPECTED!")
+else:
+  print("'transfer_this' exists and is set to 'test', as expected")
+`,
+              run: async (input) => {
+                await runCode(input, { loadVariablesBeforeRun: true });
+              },
+            },
+            {
+              title: 'Clear variables before run (fresh start)',
+              jsCode: `await runCode({input}, { loadVariablesBeforeRun: false })`,
+              input: `
+try:
+  transfer_this
+except NameError:
+  print("'transfer_this' did not exist, as expected")
+else:
+  raise Exception("'transfer_this' exists, which is UNEXPECTED!")
+`,
+              run: async (input) => {
+                await runCode(input, { loadVariablesBeforeRun: false });
+              },
+            },
+          ],
+        },
+      };
+
+      function LoadingEngine({ label, ...props }) {
+        const [isLoading, setIsLoading] = React.useState(false);
+
+        React.useEffect(() => {
+          setOptions({
+            onLoading: (engine) => setIsLoading(engine),
+            onLoaded: (engine) => setIsLoading(false),
+          });
+        }, []);
+
+        if (!isLoading) return null;
+
+        return (
+          <div className="flex row mx-8">
+            <svg
+              className="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Loading {isLoading}
+          </div>
+        );
+      }
+
+      function Title({ children, ...props }) {
+        return (
+          <h1 className="text-4xl text-bold my-4" {...props}>
+            {children}
+          </h1>
+        );
+      }
+
+      function SubTitle({ children, ...props }) {
+        return (
+          <h1 className="text-2xl text-bold my-4" {...props}>
+            {children}
+          </h1>
+        );
+      }
+
+      function Button({ label, color = 'bg-blue-500', ...props }) {
+        return (
+          <button
+            className={
+              color +
+              ' hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
+            }
+            {...props}
+          >
+            {label}
+          </button>
+        );
+      }
+
+      function OutputItem({ color, type, children }) {
+        return (
+          <pre
+            className={`flex-1 p-4 overflow-auto whitespace-pre-wrap rounded-md relative`}
+            style={{
+              margin: 0,
+              paddingTop: '2rem',
+              flexBasis: '280px',
+              backgroundColor: '#1e1e1e',
+            }}
+          >
+            <div className="absolute top-2 left-3" style={{ color: '#fff5' }}>
+              {type}
+            </div>
+            {children}
+          </pre>
+        );
+      }
+
+      function Output({ input, output, error }) {
+        const ready = React.useRef(true);
+        React.useEffect(() => {
+          let id = null;
+          if (ready.current) {
+            ready.current = false;
+            id = setTimeout(() => {
+              Prism.highlightAll();
+              ready.current = true;
+            }, 10);
+          }
+          return () => id ?? clearTimeout(id);
+        }, [input, output, error]);
+
+        return (
+          <div className="flex gap-4 flex-wrap">
+            {input && (
+              <OutputItem type="JavaScript Code" color="green">
+                <code className="language-javascript">{input}</code>
+              </OutputItem>
+            )}
+            {output && (
+              <OutputItem type="Output" color="gray">
+                <code className="language-none">{output}</code>
+              </OutputItem>
+            )}
+            {error && (
+              <OutputItem type="Error (more details in console)" color="red">
+                <code className="language-json">
+                  {JSON.stringify(error, null, 2)}
+                </code>
+              </OutputItem>
+            )}
+          </div>
+        );
+      }
+
+      function Sandbox() {
+        const [input, setInput] = React.useState('');
+        const [output, setOutput] = React.useState('');
+        const [error, setError] = React.useState('');
+        const [code, setCode] = React.useState(`for i in range(10):
   print("i =", i)
 
 print("Done! Now, here comes an error:")
 
-undefinedvariable`,
-          language: 'python',
-          theme: 'vs-dark',
-        });
-      });
+undefinedvariable`);
+
+        const Editor = monaco_react.default;
+
+        return (
+          <div className="flex flex-col m-4">
+            <Title>Sandbox:</Title>
+            <div className="flex">
+              <Editor
+                height={200}
+                width={512}
+                theme="vs-dark"
+                language="python"
+                value={code}
+                onChange={(newCode) => setCode(newCode)}
+              />
+            </div>
+            <div className="flex my-4 gap-4 flex-wrap">
+              <Button
+                label="Run using Skulpt"
+                onClick={async () => {
+                  setInput(`await setEngine('skulpt');
+await runCode(\`${code}\`);`);
+                  setOutput('');
+                  setError('');
+                  await setOptions({
+                    output: (arg) => setOutput(arg),
+                    error: (arg) => {
+                      console.error(arg);
+                      setError(arg);
+                    },
+                  });
+                  await setEngine('skulpt');
+                  await runCode(code);
+                }}
+              />
+              <Button
+                label="Run using Pyodide"
+                onClick={async () => {
+                  setInput(`await setEngine('pyodide');
+await runCode(\`${code}\`);`);
+                  setOutput('');
+                  setError('');
+                  await setOptions({
+                    output: (arg) => setOutput(arg),
+                    error: (arg) => {
+                      console.error(arg);
+                      setError(arg);
+                    },
+                  });
+                  await setEngine('pyodide');
+                  await runCode(code);
+                }}
+              />
+              <Button
+                label="Run using Brython"
+                onClick={async () => {
+                  setInput(`await setEngine('brython');
+await runCode(\`${code}\`);`);
+                  setOutput('');
+                  setError('');
+                  await setOptions({
+                    output: (arg) => setOutput(arg),
+                    error: (arg) => {
+                      console.error(arg);
+                      setError(arg);
+                    },
+                  });
+                  await setEngine('brython');
+                  await runCode(code);
+                }}
+              />
+              {input && (
+                <Button
+                  color="bg-red-600"
+                  label="Clear output"
+                  onClick={() => {
+                    setInput('');
+                    setOutput('');
+                    setError('');
+                  }}
+                />
+              )}
+            </div>
+            <Output {...{ input, output, error }} />
+          </div>
+        );
+      }
+
+      function Example({
+        title,
+        jsCode,
+        input,
+        run,
+        engine = null,
+        showDebug = false,
+      }) {
+        const [output, setOutput] = React.useState('');
+        const [error, setError] = React.useState('');
+        const buttons = engine ? [engine] : ['skulpt', 'pyodide', 'brython'];
+
+        return (
+          <div>
+            <SubTitle>{title}</SubTitle>
+            <div className="flex my-2 gap-4">
+              {buttons.map((engine) => (
+                <Button
+                  key={engine}
+                  onClick={async () => {
+                    setOutput('');
+                    setError('');
+
+                    if (engine !== 'none') {
+                      await setEngine(engine);
+                    }
+
+                    await setOptions({
+                      output: (arg) => setOutput(arg),
+                      error: (arg) => {
+                        console.error(arg);
+                        setError(arg);
+                      },
+                    });
+
+                    if (showDebug) {
+                      pythonRunner.debugFunction = (arg) =>
+                        setOutput((o) => o + arg);
+                    }
+
+                    await run(input);
+
+                    if (showDebug) {
+                      pythonRunner.debugFunction = null;
+                    }
+                  }}
+                  label={
+                    engine === 'none' ? (
+                      'Load engines'
+                    ) : (
+                      <>
+                        Run using{' '}
+                        <span style={{ textTransform: 'capitalize' }}>
+                          {engine}
+                        </span>
+                      </>
+                    )
+                  }
+                />
+              ))}
+            </div>
+            <Output
+              input={jsCode.replace('{input}', `\`${input}\``)}
+              {...{ output, error }}
+            />
+          </div>
+        );
+      }
+
+      function Examples({ example }) {
+        const { sections, title } = examples[example];
+
+        return (
+          <div className="m-4">
+            <Title>{title}</Title>
+            {sections.map((section, i) => {
+              return <Example key={i} {...section} />;
+            })}
+          </div>
+        );
+      }
+
+      function App() {
+        return (
+          <div className="container flex flex-col gap-8 mx-auto pb-20">
+            <Sandbox />
+            <LoadingEngine />
+            <Examples example="loading" />
+            <Examples example="variables" />
+            <Examples example="errors" />
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App className="" />, document.querySelector('#app'));
     </script>
   </body>
 </html>
