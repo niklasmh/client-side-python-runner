@@ -1,6 +1,6 @@
 {
   "name": "client-side-python-runner",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A client side Python runner wrapper",
   "main": "index.js",
   "repository": {
@@ -8,7 +8,9 @@
     "url": "git+https://github.com/niklasmh/client-side-python-runner.git"
   },
   "scripts": {
-    "examples": "npx serve"
+    "examples": "npx serve",
+    "prepack": "node prepare",
+    "postpack": "node prepare done"
   },
   "keywords": [
     "python",
