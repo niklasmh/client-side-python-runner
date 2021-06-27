@@ -353,6 +353,7 @@ You are also welcome to contribute with code as well, just fork the project, do 
 To test out the project - such that you do not need to set up an environment for yourself - you can run:
 
 ```
+npm run develop
 npm run examples
 ```
 

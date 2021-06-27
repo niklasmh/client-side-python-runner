@@ -10,7 +10,7 @@
   "scripts": {
     "examples": "npx serve",
     "prepublishOnly": "node prepare",
-    "postpublish": "node prepare done"
+    "develop": "node prepare develop"
   },
   "keywords": [
     "python",
