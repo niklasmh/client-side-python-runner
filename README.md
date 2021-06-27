@@ -15,8 +15,8 @@ yarn add client-side-python-runner
 Pyodide example:
 
 ```javascript
-import { runCode } from 'client-side-python-runner';
-// OR import { runCode } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
+import { runCode, setEngine } from 'client-side-python-runner';
+// OR import { runCode, setEngine } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
 await setEngine('pyodide');
 await runCode(`print("printed from pyodide")`)
