@@ -1,3 +1,7 @@
+### Version 1.4.3
+
+- Fixing bugs with prepare script execution.
+
 ### Version 1.4.1
 
 - Update README.
