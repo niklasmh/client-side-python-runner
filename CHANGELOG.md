@@ -1,3 +1,8 @@
+### Version 1.4.4
+
+- Fix Pyodide variable support (as it actually broke when upgrading in version 1.4.0). Really need some tests such that this does not happen again.
+- Remove repeating examples from docs and add variable management example.
+
 ### Version 1.4.3
 
 - Fixing bugs with prepare script execution.
