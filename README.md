@@ -12,38 +12,16 @@ yarn add client-side-python-runner
 
 ## Usage
 
-Pyodide example:
+Basic example:
 
 ```javascript
 import { runCode, setEngine } from 'client-side-python-runner';
 // OR import { runCode, setEngine } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
-await setEngine('pyodide');
-await runCode(`print("printed from pyodide")`)
-// Output in console.log:
+await setEngine('pyodide'); // Specify "skulpt", "pyodide" or "brython"
+await runCode(`print("printed from pyodide")`);
+// Output in console.log (can be changed - see setOptions):
 // > printed from pyodide
-```
-
-Skulpt example:
-
-```javascript
-import { runCode, setEngine } from 'client-side-python-runner';
-
-await setEngine('skulpt');
-await runCode(`print("printed from skulpt")`);
-// Output in console.log:
-// > printed from skulpt
-```
-
-Brython example:
-
-```javascript
-import { runCode, setEngine } from 'client-side-python-runner';
-
-await setEngine('brython');
-await runCode(`print("printed from brython")`);
-// Output in console.log:
-// > printed from brython
 ```
 
 Setting options:
@@ -61,6 +39,25 @@ setOptions({
   onLoading: (engine) => {},
   onLoaded: (engine) => {},
 });
+```
+
+Handle variables:
+
+```javascript
+import { getVariables, setVariable, clearVariables } from 'client-side-python-runner';
+
+const variables = await getVariables(); // => {}
+await setVariable("test", 123);
+const variables = await getVariables(); // => { "test": 123 }
+
+// This will noe be used in the next execution:
+await runCode(`print(test)`);
+// Output in console.log:
+// > 123
+
+// Clear all variables:
+await clearVariables()
+await runCode(`print(test)`); // Will now result in NameError ("test" not defined)
 ```
 
 <details>
