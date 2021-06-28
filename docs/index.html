@@ -207,7 +207,7 @@ else:
             },
             {
               title: 'Clear variables before run (fresh start)',
-              engines: ['pyodide', 'skulpt'],
+              engines: ['skulpt', 'pyodide'],
               jsCode: `await runCode({input}, { loadVariablesBeforeRun: false })`,
               input: `
 try:
