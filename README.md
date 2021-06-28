@@ -44,7 +44,7 @@ setOptions({
 Handle variables:
 
 ```javascript
-import { getVariables, setVariable, clearVariables } from 'client-side-python-runner';
+import { runCode, getVariables, setVariable, clearVariables } from 'client-side-python-runner';
 
 console.log(await getVariables()); // => {}
 await setVariable("test", 123);
