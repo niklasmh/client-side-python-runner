@@ -380,9 +380,9 @@ function createPyodideRunner() {
         const result = window.pyodide.runPython(code);
 
         if (storeVariablesAfterRun) {
-          window.pythonRunner.loadedEngines[engine].variables = Object.keys(
-            window.pyodide.runPython('vars()')
-          )
+          window.pythonRunner.loadedEngines[engine].variables = [
+            ...window.pyodide.globals.toJs().keys(),
+          ]
             .filter(
               (name) =>
                 !window.pythonRunner.loadedEngines[
@@ -417,7 +417,7 @@ function createPyodideRunner() {
       filter = null,
       onlyShowNewVariables = true
     ) => {
-      let variables = Object.entries(window.pyodide.runPython('vars()'));
+      let variables = [...window.pyodide.globals.toJs().entries()];
       if (onlyShowNewVariables) {
         variables = variables.filter(
           ([name]) =>
@@ -487,9 +487,9 @@ function createPyodideRunner() {
     },
   };
 
-  window.pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
-    window.pyodide.runPython('vars()')
-  );
+  window.pythonRunner.loadedEngines[engine].predefinedVariables = [
+    ...window.pyodide.globals.toJs().keys(),
+  ];
 }
 
 function createSkulptRunner() {
