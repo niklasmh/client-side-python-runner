@@ -72,7 +72,7 @@
         runCode,
         setOptions,
         setEngine,
-      } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@1.4.3';
+      } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@1.4.4';
 
       pythonRunner.debug = true;
 
@@ -84,9 +84,9 @@
               title: 'Loading example',
               jsCode: `// This is not necessary unless you want to
 // load the engines separately from the execution
-await loadEngines({input})`,
-              input: `['skulpt', 'pyodide', 'brython']`,
-              engine: 'none',
+await loadEngines(['skulpt', 'pyodide', 'brython'])`,
+              input: ``,
+              engines: ['none'],
               showDebug: true,
               run: async (input) => {
                 await loadEngines(['skulpt', 'pyodide', 'brython']);
@@ -97,7 +97,7 @@ await loadEngines({input})`,
               jsCode: `await setEngine('pyodide');
 await runCode({input})`,
               input: `print("printed from pyodide")`,
-              engine: 'pyodide',
+              engines: ['pyodide'],
               run: async (input) => {
                 await setEngine('pyodide');
                 await runCode(input);
@@ -108,7 +108,7 @@ await runCode({input})`,
               jsCode: `await useEngine('skulpt')
 await runCode({input})`,
               input: `print("printed from skulpt")`,
-              engine: 'skulpt',
+              engines: ['skulpt'],
               run: async (input) => {
                 await setEngine('skulpt');
                 await runCode(input);
@@ -119,7 +119,7 @@ await runCode({input})`,
               jsCode: `await useEngine('brython')
 await runCode({input})`,
               input: `print("printed from brython")`,
-              engine: 'brython',
+              engines: ['brython'],
               run: async (input) => {
                 await setEngine('brython');
                 await runCode(input);
@@ -179,6 +179,7 @@ for i in range(100):
           sections: [
             {
               title: 'Store variables after run',
+              engines: ['skulpt', 'pyodide'],
               jsCode: `await runCode({input}, { storeVariablesAfterRun: true })`,
               input: `
 transfer_this = "test"
@@ -190,6 +191,7 @@ print("Should store 'transfer_this' to the next execution")
             },
             {
               title: 'Load variables into run',
+              engines: ['skulpt', 'pyodide'],
               jsCode: `await runCode({input}, { loadVariablesBeforeRun: true })`,
               input: `
 try:
@@ -205,6 +207,7 @@ else:
             },
             {
               title: 'Clear variables before run (fresh start)',
+              engines: ['pyodide', 'skulpt'],
               jsCode: `await runCode({input}, { loadVariablesBeforeRun: false })`,
               input: `
 try:
@@ -450,12 +453,12 @@ await runCode(\`${code}\`);`);
         jsCode,
         input,
         run,
-        engine = null,
+        engines = null,
         showDebug = false,
       }) {
         const [output, setOutput] = React.useState('');
         const [error, setError] = React.useState('');
-        const buttons = engine ? [engine] : ['skulpt', 'pyodide', 'brython'];
+        const buttons = engines ? engines : ['skulpt', 'pyodide', 'brython'];
 
         return (
           <div>
