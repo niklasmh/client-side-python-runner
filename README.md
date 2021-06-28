@@ -46,9 +46,9 @@ Handle variables:
 ```javascript
 import { getVariables, setVariable, clearVariables } from 'client-side-python-runner';
 
-const variables = await getVariables(); // => {}
+console.log(await getVariables()); // => {}
 await setVariable("test", 123);
-const variables = await getVariables(); // => { "test": 123 }
+console.log(await getVariables()); // => { "test": 123 }
 
 // This will noe be used in the next execution:
 await runCode(`print(test)`);
@@ -57,6 +57,7 @@ await runCode(`print(test)`);
 
 // Clear all variables:
 await clearVariables()
+console.log(await getVariables()); // => {}
 await runCode(`print(test)`); // Will now result in NameError ("test" not defined)
 ```
 
