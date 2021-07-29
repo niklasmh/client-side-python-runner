@@ -710,8 +710,13 @@ async function createBrythonRunner() {
           variables = null,
         } = options;
 
+        const prependedCode = [];
+
         if (loadVariablesBeforeRun) {
-          // TODO
+          Object.entries(
+            window.pythonRunner.loadedEngines[engine].variables
+          ).forEach(([name, value]) => prependedCode.push(name + '=' + value));
+          prependedCode.push('\n');
         } else {
           await window.pythonRunner.loadedEngines[engine].clearVariables();
         }
@@ -720,50 +725,110 @@ async function createBrythonRunner() {
         if (variables) {
           Object.entries(variables).forEach(([name, value]) => {
             try {
-              // TODO
+              prependedCode.push(name + '=' + value);
             } catch (ex) {}
           });
         }
 
         window.pythonRunner.loadedEngines[engine].currentCode = code;
-        await runner.runCode(code);
-
+        // !Getting variables are really hacky. Should consider using a
+        // !non-webworker Brython implementation in the future
         if (storeVariablesAfterRun) {
-          // TODO
+          const newVariables = {};
+          const { output } = getOptions();
+          await setOptions({
+            output: (...result) => {
+              if (result[0].indexOf('vars():') === 0) {
+                result[0]
+                  .slice(8)
+                  .split('\n')
+                  .forEach((keyValue) => {
+                    const [key, ...value] = keyValue.split(':');
+                    if (
+                      key &&
+                      !window.pythonRunner.loadedEngines[
+                        engine
+                      ].predefinedVariables.includes(key)
+                    ) {
+                      newVariables[key] = value.join(':');
+                    }
+                  });
+                window.pythonRunner.loadedEngines[engine].variables =
+                  newVariables;
+              } else {
+                output(...result);
+              }
+            },
+          });
+          await runner.runCode(
+            prependedCode.join(';') +
+              code +
+              '\nprint("vars():\\n" + "\\n".join([i+":"+("\\""+e+"\\"" if isinstance(e, str) else str(e)) for i,e in vars().items()]))\n'
+          );
+          await setOptions({ output });
+        } else {
+          await runner.runCode(code);
         }
       },
 
-      getVariable: async (name) => '', // TODO
+      getVariable: async (name) =>
+        window.pythonRunner.loadedEngines[engine].variables[name],
 
       getVariables: async (
         includeValues = true,
         filter = null,
         onlyShowNewVariables = true
       ) => {
-        // TODO
-        return {};
+        if (includeValues) {
+          if (filter) {
+            return Object.keys(
+              window.pythonRunner.loadedEngines[engine].variables
+            )
+              .filter(filter)
+              .reduce((acc, name) => {
+                return {
+                  ...acc,
+                  [name]:
+                    window.pythonRunner.loadedEngines[engine].variables[name],
+                };
+              }, {});
+          }
+          return window.pythonRunner.loadedEngines[engine].variables;
+        }
+        if (filter) {
+          return Object.keys(
+            window.pythonRunner.loadedEngines[engine].variables
+          ).filter(filter);
+        }
+        return Object.keys(window.pythonRunner.loadedEngines[engine].variables);
       },
 
       setVariable: async (name, value) => {
-        // TODO
+        window.pythonRunner.loadedEngines[engine].variables[name] = value;
       },
 
       setVariables: async (variables) => {
-        // TODO
+        Object.entries(variables).forEach(([name, value]) => {
+          window.pythonRunner.loadedEngines[engine].variables[name] = value;
+        });
       },
 
       clearVariable: async (name) => {
-        // TODO
+        delete window.pythonRunner.loadedEngines[engine].variables[name];
       },
 
       clearVariables: async () => {
-        // TODO
+        window.pythonRunner.loadedEngines[engine].variables = {};
       },
     };
 
-    window.pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
-      {}
-    );
+    window.pythonRunner.loadedEngines[engine].predefinedVariables = [
+      '__class__',
+      '__doc__',
+      '__file__',
+      '__name__',
+      '__package__',
+    ];
   });
 }
 
