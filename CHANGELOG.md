@@ -1,3 +1,11 @@
+### Version 1.5.1
+
+- Make variable management in Brython support nan and +/-inf.
+
+### Version 1.5.0
+
+- Add variable management support for Brython. However, it only works on numbers, strings, complex numbers, None and boolean - not classes, functions, nan and +/-inf.
+
 ### Version 1.4.4
 
 - Fix Pyodide variable support (as it actually broke when upgrading in version 1.4.0). Really need some tests such that this does not happen again.
