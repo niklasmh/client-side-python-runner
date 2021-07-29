@@ -72,7 +72,7 @@
         runCode,
         setOptions,
         setEngine,
-      } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@1.4.4';
+      } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@1.5.1';
 
       pythonRunner.debug = true;
 
@@ -93,17 +93,6 @@ await loadEngines(['skulpt', 'pyodide', 'brython'])`,
               },
             },
             {
-              title: 'Pyodide example',
-              jsCode: `await setEngine('pyodide');
-await runCode({input})`,
-              input: `print("printed from pyodide")`,
-              engines: ['pyodide'],
-              run: async (input) => {
-                await setEngine('pyodide');
-                await runCode(input);
-              },
-            },
-            {
               title: 'Skulpt example',
               jsCode: `await useEngine('skulpt')
 await runCode({input})`,
@@ -111,6 +100,17 @@ await runCode({input})`,
               engines: ['skulpt'],
               run: async (input) => {
                 await setEngine('skulpt');
+                await runCode(input);
+              },
+            },
+            {
+              title: 'Pyodide example',
+              jsCode: `await setEngine('pyodide');
+await runCode({input})`,
+              input: `print("printed from pyodide")`,
+              engines: ['pyodide'],
+              run: async (input) => {
+                await setEngine('pyodide');
                 await runCode(input);
               },
             },
@@ -179,7 +179,6 @@ for i in range(100):
           sections: [
             {
               title: 'Store variables after run',
-              engines: ['skulpt', 'pyodide'],
               jsCode: `await runCode({input}, { storeVariablesAfterRun: true })`,
               input: `
 transfer_this = "test"
@@ -191,7 +190,6 @@ print("Should store 'transfer_this' to the next execution")
             },
             {
               title: 'Load variables into run',
-              engines: ['skulpt', 'pyodide'],
               jsCode: `await runCode({input}, { loadVariablesBeforeRun: true })`,
               input: `
 try:
@@ -207,7 +205,6 @@ else:
             },
             {
               title: 'Clear variables before run (fresh start)',
-              engines: ['skulpt', 'pyodide'],
               jsCode: `await runCode({input}, { loadVariablesBeforeRun: false })`,
               input: `
 try:
@@ -354,12 +351,15 @@ else:
         const [input, setInput] = React.useState('');
         const [output, setOutput] = React.useState('');
         const [error, setError] = React.useState('');
+        const [loadVariablesBeforeRun, setLoadVariables] = React.useState(true);
+        const [storeVariablesAfterRun, setStoreVariables] = React.useState(true);
         const [code, setCode] = React.useState(`for i in range(10):
   print("i =", i)
 
 print("Done! Now, here comes an error:")
 
-undefinedvariable`);
+undefinedvariable
+`);
 
         const Editor = monaco_react.default;
 
@@ -376,6 +376,14 @@ undefinedvariable`);
                 onChange={(newCode) => setCode(newCode)}
               />
             </div>
+            <div className="flex mt-4 gap-4 flex-wrap">
+              <label><input type="checkbox" checked={loadVariablesBeforeRun} onChange={e=>{
+                setLoadVariables(e.currentTarget.checked)
+              }} /> Load stored variables before run</label>
+              <label><input type="checkbox" checked={storeVariablesAfterRun} onChange={e=>{
+                setStoreVariables(e.currentTarget.checked)
+              }} /> Store variables after run</label>
+            </div>
             <div className="flex my-4 gap-4 flex-wrap">
               <Button
                 label="Run using Skulpt"
@@ -385,14 +393,14 @@ await runCode(\`${code}\`);`);
                   setOutput('');
                   setError('');
                   await setOptions({
-                    output: (arg) => setOutput(arg),
+                    output: (arg) => setOutput(o => [...o, arg]),
                     error: (arg) => {
                       console.error(arg);
                       setError(arg);
                     },
                   });
                   await setEngine('skulpt');
-                  await runCode(code);
+                  await runCode(code, { loadVariablesBeforeRun, storeVariablesAfterRun });
                 }}
               />
               <Button
@@ -403,14 +411,14 @@ await runCode(\`${code}\`);`);
                   setOutput('');
                   setError('');
                   await setOptions({
-                    output: (arg) => setOutput(arg),
+                    output: (arg) => setOutput(o => [...o, arg]),
                     error: (arg) => {
                       console.error(arg);
                       setError(arg);
                     },
                   });
                   await setEngine('pyodide');
-                  await runCode(code);
+                  await runCode(code, { loadVariablesBeforeRun, storeVariablesAfterRun });
                 }}
               />
               <Button
@@ -421,14 +429,14 @@ await runCode(\`${code}\`);`);
                   setOutput('');
                   setError('');
                   await setOptions({
-                    output: (arg) => setOutput(arg),
+                    output: (arg) => setOutput(o => [...o, arg]),
                     error: (arg) => {
                       console.error(arg);
                       setError(arg);
                     },
                   });
                   await setEngine('brython');
-                  await runCode(code);
+                  await runCode(code, { loadVariablesBeforeRun, storeVariablesAfterRun });
                 }}
               />
               {input && (
@@ -476,7 +484,7 @@ await runCode(\`${code}\`);`);
                     }
 
                     await setOptions({
-                      output: (arg) => setOutput(arg),
+                      output: (arg) => setOutput(o => [...o, arg]),
                       error: (arg) => {
                         console.error(arg);
                         setError(arg);
