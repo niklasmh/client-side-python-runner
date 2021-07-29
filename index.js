@@ -743,14 +743,32 @@ async function createBrythonRunner() {
                   .slice(8)
                   .split('\n')
                   .forEach((keyValue) => {
-                    const [key, ...value] = keyValue.split(':');
+                    const [key, ...valueArr] = keyValue.split(':');
                     if (
                       key &&
                       !window.pythonRunner.loadedEngines[
                         engine
                       ].predefinedVariables.includes(key)
                     ) {
-                      newVariables[key] = value.join(':');
+                      const value = valueArr.join(':');
+                      switch (value) {
+                        case 'inf':
+                          newVariables[key] = 'float("inf")';
+                          break;
+                        case '-inf':
+                          newVariables[key] = 'float("-inf")';
+                          break;
+                        case 'nan':
+                          newVariables[key] = 'float("nan")';
+                          break;
+                        default:
+                          if (value.charAt(0) === '<') {
+                            newVariables[key] = '"' + value + '"';
+                          } else {
+                            newVariables[key] = value;
+                          }
+                          break;
+                      }
                     }
                   });
                 window.pythonRunner.loadedEngines[engine].variables =
