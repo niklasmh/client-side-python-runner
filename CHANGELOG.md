@@ -1,3 +1,8 @@
+### Version 1.6.0
+
+- Add tests.
+- Add types.
+
 ### Version 1.5.1
 
 - Make variable management in Brython support nan and +/-inf.

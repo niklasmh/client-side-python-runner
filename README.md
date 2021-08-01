@@ -15,13 +15,13 @@ yarn add client-side-python-runner
 Basic example:
 
 ```javascript
-import { runCode, setEngine } from 'client-side-python-runner';
-// OR import { runCode, setEngine } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
+import { runCode, setEngine, setOptions } from 'client-side-python-runner';
+// OR import { runCode, setEngine, setOptions } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
 await setEngine('pyodide'); // Specify "skulpt", "pyodide" or "brython"
+await setOptions({ output: console.log });
 await runCode(`print("printed from pyodide")`);
-// Output in console.log (can be changed - see setOptions):
-// > printed from pyodide
+// You can now see the print output in the browser console
 ```
 
 Setting options:
@@ -44,21 +44,26 @@ setOptions({
 Handle variables:
 
 ```javascript
-import { runCode, getVariables, setVariable, clearVariables } from 'client-side-python-runner';
+import {
+  runCode,
+  getVariables,
+  setVariable,
+  clearVariables,
+} from 'client-side-python-runner';
 
 console.log(await getVariables()); // => {}
-await setVariable("test", 123);
+await setVariable('test', 123);
 console.log(await getVariables()); // => { "test": 123 }
 
-// This will noe be used in the next execution:
+// This will now be used in the next execution:
 await runCode(`print(test)`);
 // Output in console.log:
 // > 123
 
 // Clear all variables:
-await clearVariables()
+await clearVariables();
 console.log(await getVariables()); // => {}
-await runCode(`print(test)`); // Will now result in NameError ("test" not defined)
+await runCode(`print(test)`); // Will now result in NameError ("test" is not defined)
 ```
 
 <details>
@@ -120,7 +125,7 @@ setOptions({
 });
 
 // Run the code (and specifying engine)
-await runCode('print("printed from skulpt")', { use: "skulpt" });
+await runCode('print("printed from skulpt")', { use: 'skulpt' });
 
 // Switch engine
 await setEngine('pyodide');
@@ -336,7 +341,7 @@ Check out the [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Later
 
-- [ ] Add TypeScript support.
+- [x] Add TypeScript support.
 - [ ] Support files.
 - [ ] Include more Python runners.
 - [ ] Make it possible to run them offline (by building them into the project somehow).
@@ -356,3 +361,15 @@ npm run examples
 ```
 
 Then go to [localhost:5000/docs/](http://localhost:5000/docs/) to test it out.
+
+To generate types (from JSDoc comments in `index.js`):
+
+```
+npm run build
+```
+
+Check if tests still are working before creating PR:
+
+```
+npm test
+```
