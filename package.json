@@ -3,12 +3,14 @@
   "version": "1.5.1",
   "description": "A client side Python runner wrapper",
   "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/niklasmh/client-side-python-runner.git"
   },
   "scripts": {
     "examples": "npx serve",
+    "build": "tsc",
     "prepublishOnly": "node prepare",
     "develop": "node prepare develop"
   },
@@ -23,5 +25,8 @@
   "bugs": {
     "url": "https://github.com/niklasmh/client-side-python-runner/issues"
   },
-  "homepage": "https://github.com/niklasmh/client-side-python-runner#readme"
+  "homepage": "https://github.com/niklasmh/client-side-python-runner#readme",
+  "devDependencies": {
+    "typescript": "4.3.5"
+  }
 }

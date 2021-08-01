@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "module": "commonjs",
+    "outDir": ".",
+    "strict": true,
+    "target": "es5",
+    "types": ["node"]
+  },
+  "include": ["index.js"],
+  "exclude": ["node_modules"]
+}

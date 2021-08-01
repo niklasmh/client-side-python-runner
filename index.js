@@ -1,3 +1,7 @@
+/**
+ * @typedef {"skulpt" | "pyodide" | "brython"} Engine
+ */
+/** @type {Engine} */
 const defaultPythonEngine = 'pyodide';
 
 const URLS = {
@@ -15,75 +19,153 @@ const URLS = {
   },
 };
 
-window.pythonRunner = window.pythonRunner || {
+/**
+ * @typedef {Object} Options
+ * @property {(...data) => void} output The output from Python print()-functions
+ * @property {null | (error?: Error) => void} error Parsed Python error messages
+ * @property {(message: string, _default?: string) => void} input Python input()-function
+ * @property {number} pythonVersion
+ * @property {boolean} loadVariablesBeforeRun
+ * @property {boolean} storeVariablesAfterRun
+ * @property {(engine: Engine) => void} onLoading
+ * @property {(engine: Engine) => void} onLoaded
+ */
+const options = {
+  output: console.log,
+  error: null,
+  input: window.prompt,
+  pythonVersion: 3,
+  loadVariablesBeforeRun: true,
+  storeVariablesAfterRun: true,
+  onLoading: (engine) => {},
+  onLoaded: (engine) => {},
+};
+
+/**
+ * @typedef {{[name: string]: any}} Variables
+ */
+
+/**
+ * @typedef {Object} LoadedEngine
+ * @property {any} runnerReference
+ * @property {string} currentCode
+ * @property {string} engine
+ * @property {string[]} predefinedVariables
+ * @property {RunCode} runCode
+ * @property {GetVariable} getVariable
+ * @property {GetVariables} getVariables
+ * @property {SetVariable} setVariable
+ * @property {SetVariables} setVariables
+ * @property {ClearVariable} clearVariable
+ * @property {ClearVariables} clearVariables
+ * @property {{[name: string]: any}} variables
+ */
+
+/**
+ * @typedef {Object} PythonRunner
+ * @property {{[engine: Engine]: LoadedEngine}} loadedEngines
+ * @property {{[engine: Engine]: (couldNotLoad: boolean) => void}} loadingEngines
+ * @property {{[url: string]: boolean}} loadingScripts
+ * @property {boolean} debug Turn on logging
+ * @property {null | (output: string) => void} debugFunction
+ * @property {Engine} currentEngine
+ * @property {LoadEngine} loadEngine
+ * @property {LoadEngines} loadEngines
+ * @property {SetEngine} setEngine
+ * @property {HasEngine} hasEngine
+ * @property {IsLoadingEngine} isLoadingEngine
+ * @property {GetOptions} getOptions
+ * @property {SetOptions} setOptions
+ * @property {RunCode} runCode
+ * @property {GetVariable} getVariable
+ * @property {GetVariables} getVariables
+ * @property {SetVariable} setVariable
+ * @property {SetVariables} setVariables
+ * @property {ClearVariable} clearVariable
+ * @property {ClearVariables} clearVariables
+ * @property {Options} options
+ */
+/** @type {PythonRunner} */
+const pythonRunner = {
   loadedEngines: {},
   loadingEngines: {},
   loadingScripts: {},
   debug: false, // Turn on logging of important actions
   debugFunction: null,
   currentEngine: defaultPythonEngine,
-  options: {
-    output: console.log,
-    error: null,
-    input: window.prompt,
-    pythonVersion: 3,
-    loadVariablesBeforeRun: true,
-    storeVariablesAfterRun: true,
-    onLoading: (engine) => {},
-    onLoaded: (engine) => {},
-  },
+  options,
 };
 
 const log = function (input, color = '#aaa', style = 'font-weight:bold') {
   console.log('%c' + input, `color:${color};${style}`);
-  if (window.pythonRunner.debugFunction)
-    window.pythonRunner.debugFunction(input + '\n');
+  if (pythonRunner.debugFunction) pythonRunner.debugFunction(input + '\n');
 };
 
-window.pythonRunner.hasEngine = function (engine) {
-  return engine in window.pythonRunner.loadedEngines;
+/**
+ * @callback HasEngine
+ * @param {Engine} engine
+ */
+export const hasEngine = function (engine) {
+  return engine in pythonRunner.loadedEngines;
 };
 
-window.pythonRunner.isLoadingEngine = function (engine) {
-  return engine in window.pythonRunner.loadingEngines;
+/**
+ * @callback IsLoadingEngine
+ * @param {Engine} engine
+ */
+const isLoadingEngine = function (engine) {
+  return engine in pythonRunner.loadingEngines;
 };
 
-window.pythonRunner.getOptions = function () {
-  return window.pythonRunner.options;
+/**
+ * @callback GetOptions
+ * @returns {Options}
+ */
+export const getOptions = function () {
+  return pythonRunner.options;
 };
 
-window.pythonRunner.setOptions = function (options) {
+/**
+ * @callback SetOptions
+ * @param {Options} options
+ */
+export const setOptions = function (options) {
   if ('pythonVersion' in options) {
     if ('skulpt' in pythonRunner.loadedEngines) {
       window.Sk.configure({
         __future__:
-          options.pythonVersion === 2 ? window.Sk.python2 : window.Sk.python3,
+          pythonRunner.options.pythonVersion === 2
+            ? window.Sk.python2
+            : window.Sk.python3,
       });
     }
   }
-  window.pythonRunner.options = { ...window.pythonRunner.options, ...options };
+  pythonRunner.options = { ...pythonRunner.options, ...options };
 };
 
-window.pythonRunner.setEngine = async function (engine) {
-  if (!window.pythonRunner.hasEngine(engine)) {
-    if (!(await window.pythonRunner.loadEngine(engine))) {
+/**
+ * @callback SetEngine
+ * @param {Engine} engine
+ */
+export const setEngine = async function (engine) {
+  if (!hasEngine(engine)) {
+    if (!(await loadEngine(engine))) {
       return false;
     }
   }
-  window.pythonRunner.currentEngine = engine;
-  if (window.pythonRunner.debug)
-    log('Using the ' + engine + ' engine', 'orange');
+  pythonRunner.currentEngine = engine;
+  if (pythonRunner.debug) log('Using the ' + engine + ' engine', 'orange');
   return true;
 };
 
 async function loadScript(url, timeout = 20000) {
   return new Promise((resolve, reject) => {
-    if (url in window.pythonRunner.loadingScripts) {
+    if (url in pythonRunner.loadingScripts) {
       resolve(false);
       return;
     }
 
-    window.pythonRunner.loadingScripts[url] = true;
+    pythonRunner.loadingScripts[url] = true;
 
     const script = document.createElement('script');
     script.async = true;
@@ -91,17 +173,17 @@ async function loadScript(url, timeout = 20000) {
     document.head.appendChild(script);
 
     const timeoutID = setTimeout(() => {
-      window.pythonRunner.loadingScripts[url] = false;
+      pythonRunner.loadingScripts[url] = false;
       reject('Used too much time to load ' + url);
     }, timeout);
 
     script.addEventListener('error', () => {
-      window.pythonRunner.loadingScripts[url] = false;
+      pythonRunner.loadingScripts[url] = false;
       reject('An error occured when loading script: ' + url);
     });
 
     script.addEventListener('load', () => {
-      window.pythonRunner.loadingScripts[url] = false;
+      pythonRunner.loadingScripts[url] = false;
       clearTimeout(timeoutID);
       resolve(true);
     });
@@ -109,9 +191,9 @@ async function loadScript(url, timeout = 20000) {
 }
 
 async function untilTheEngineIsLoaded(engine) {
-  if (!window.pythonRunner.loadedEngines[engine]) {
+  if (!pythonRunner.loadedEngines[engine]) {
     return await new Promise((resolve, reject) => {
-      window.pythonRunner.loadingEngines[engine].push((couldNotLoad) => {
+      pythonRunner.loadingEngines[engine].push((couldNotLoad) => {
         if (couldNotLoad) reject();
         else resolve();
       });
@@ -121,7 +203,28 @@ async function untilTheEngineIsLoaded(engine) {
   }
 }
 
-function interpretErrorMessage(error, code, engine) {
+/**
+ * @typedef {Object} Error
+ * @property {number} columnNumber
+ * @property {Engine} engine
+ * @property {Error} error
+ * @property {string} code
+ * @property {(n: number) => string[]} getNLinesAbove
+ * @property {(n: number) => string[]} getNLinesBelow
+ * @property {string} line
+ * @property {number} lineNumber
+ * @property {string} message
+ * @property {string} type
+ */
+
+/**
+ * @callback InterpretErrorMessage
+ * @param {any} error
+ * @param {string} code
+ * @param {string} engine
+ * @returns {Error}
+ */
+export function interpretErrorMessage(error, code, engine) {
   const codeLines = code.split('\n');
 
   let type = null;
@@ -223,24 +326,28 @@ function interpretErrorMessage(error, code, engine) {
   };
 }
 
-window.pythonRunner.loadEngine = async function (
-  engine = window.pythonRunner.currentEngine,
+/**
+ * @callback LoadEngine
+ * @param {Engine} engine
+ */
+export const loadEngine = async function (
+  engine = pythonRunner.currentEngine,
   { useEngine = false } = {}
 ) {
-  if (window.pythonRunner.hasEngine(engine)) {
-    if (useEngine) window.pythonRunner.currentEngine = engine;
+  if (hasEngine(engine)) {
+    if (useEngine) pythonRunner.currentEngine = engine;
     return true;
   }
 
-  if (window.pythonRunner.debug) {
+  if (pythonRunner.debug) {
     log('Loading ' + engine + '...');
   }
 
   if (useEngine) {
-    window.pythonRunner.currentEngine = engine;
+    pythonRunner.currentEngine = engine;
   }
 
-  if (window.pythonRunner.isLoadingEngine(engine)) {
+  if (isLoadingEngine(engine)) {
     try {
       await untilTheEngineIsLoaded(engine);
       return true;
@@ -249,8 +356,8 @@ window.pythonRunner.loadEngine = async function (
     }
   }
 
-  window.pythonRunner.loadingEngines[engine] = [];
-  window.pythonRunner.options.onLoading(engine);
+  pythonRunner.loadingEngines[engine] = [];
+  pythonRunner.options.onLoading(engine);
 
   switch (engine) {
     case 'pyodide': {
@@ -277,20 +384,20 @@ window.pythonRunner.loadEngine = async function (
     }
 
     default:
-      if (window.pythonRunner.debug) log('Could not find ' + engine);
+      if (pythonRunner.debug) log('Could not find ' + engine);
       return false;
   }
 
-  if (window.pythonRunner.debug) {
+  if (pythonRunner.debug) {
     log('Successfully loaded ' + engine + '!', 'lime');
   }
 
-  for (let job of window.pythonRunner.loadingEngines[engine]) {
+  for (let job of pythonRunner.loadingEngines[engine]) {
     await job();
   }
 
-  delete window.pythonRunner.loadingEngines[engine];
-  window.pythonRunner.options.onLoaded(engine);
+  delete pythonRunner.loadingEngines[engine];
+  pythonRunner.options.onLoaded(engine);
 
   return true;
 };
@@ -346,26 +453,24 @@ function createPyodideRunner() {
       }
     }
     const content = args.map((arg) => prettyPrint(arg)).join(sep) + end;
-    window.pythonRunner.options.output(content);
+    pythonRunner.options.output(content);
   });
 
-  window.pythonRunner.loadedEngines[engine] = {
+  pythonRunner.loadedEngines[engine] = {
     engine,
-    pyodide: window.pyodide,
+    runnerReference: window.pyodide,
     predefinedVariables: [],
     variables: {},
     runCode: async (code, options = {}) => {
       try {
         const {
-          loadVariablesBeforeRun = window.pythonRunner.options
-            .loadVariablesBeforeRun,
-          storeVariablesAfterRun = window.pythonRunner.options
-            .storeVariablesAfterRun,
+          loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
+          storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
           variables = null,
         } = options;
 
         if (!loadVariablesBeforeRun) {
-          await window.pythonRunner.loadedEngines[engine].clearVariables();
+          await pythonRunner.loadedEngines[engine].clearVariables();
         }
 
         // Add new variables
@@ -380,12 +485,12 @@ function createPyodideRunner() {
         const result = window.pyodide.runPython(code);
 
         if (storeVariablesAfterRun) {
-          window.pythonRunner.loadedEngines[engine].variables = [
+          pythonRunner.loadedEngines[engine].variables = [
             ...window.pyodide.globals.toJs().keys(),
           ]
             .filter(
               (name) =>
-                !window.pythonRunner.loadedEngines[
+                !pythonRunner.loadedEngines[
                   engine
                 ].predefinedVariables.includes(name)
             )
@@ -400,10 +505,8 @@ function createPyodideRunner() {
         // Return the result
         return result;
       } catch (ex) {
-        if (typeof window.pythonRunner.options.error === 'function') {
-          window.pythonRunner.options.error(
-            interpretErrorMessage(ex, code, engine)
-          );
+        if (typeof pythonRunner.options.error === 'function') {
+          pythonRunner.options.error(interpretErrorMessage(ex, code, engine));
         } else {
           throw interpretErrorMessage(ex, code, engine);
         }
@@ -421,9 +524,9 @@ function createPyodideRunner() {
       if (onlyShowNewVariables) {
         variables = variables.filter(
           ([name]) =>
-            !window.pythonRunner.loadedEngines[
-              engine
-            ].predefinedVariables.includes(name)
+            !pythonRunner.loadedEngines[engine].predefinedVariables.includes(
+              name
+            )
         );
       }
       if (filter) {
@@ -450,7 +553,7 @@ function createPyodideRunner() {
       try {
         window.pyodide.globals.set(name, value);
       } catch (ex) {}
-      window.pythonRunner.loadedEngines[engine].variables[name] = value;
+      pythonRunner.loadedEngines[engine].variables[name] = value;
     },
 
     setVariables: async (variables) => {
@@ -458,7 +561,7 @@ function createPyodideRunner() {
         try {
           window.pyodide.globals.set(name, value);
         } catch (ex) {}
-        window.pythonRunner.loadedEngines[engine].variables[name] = value;
+        pythonRunner.loadedEngines[engine].variables[name] = value;
       });
     },
 
@@ -468,14 +571,14 @@ function createPyodideRunner() {
           window.pyodide.globals.delete(name);
         }
       } catch (ex) {}
-      if (name in window.pythonRunner.loadedEngines[engine].variables) {
-        delete window.pythonRunner.loadedEngines[engine].variables[name];
+      if (name in pythonRunner.loadedEngines[engine].variables) {
+        delete pythonRunner.loadedEngines[engine].variables[name];
       }
     },
 
     clearVariables: async () => {
       for (const name of Object.keys(
-        window.pythonRunner.loadedEngines[engine].variables
+        pythonRunner.loadedEngines[engine].variables
       )) {
         try {
           if (typeof window.pyodide.globals.get(name) !== 'undefined') {
@@ -483,11 +586,11 @@ function createPyodideRunner() {
           }
         } catch (ex) {}
       }
-      window.pythonRunner.loadedEngines[engine].variables = {};
+      pythonRunner.loadedEngines[engine].variables = {};
     },
   };
 
-  window.pythonRunner.loadedEngines[engine].predefinedVariables = [
+  pythonRunner.loadedEngines[engine].predefinedVariables = [
     ...window.pyodide.globals.toJs().keys(),
   ];
 }
@@ -504,18 +607,16 @@ function createSkulptRunner() {
     return window.Sk.builtinFiles['files'][x];
   }
 
-  window.pythonRunner.loadedEngines[engine] = {
+  pythonRunner.loadedEngines[engine] = {
     engine,
-    skulpt: window.Sk,
+    runnerReference: window.Sk,
     predefinedVariables: [],
     variables: {},
     runCode: async (code, options = {}) => {
       const {
         canvas = null,
-        loadVariablesBeforeRun = window.pythonRunner.options
-          .loadVariablesBeforeRun,
-        storeVariablesAfterRun = window.pythonRunner.options
-          .storeVariablesAfterRun,
+        loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
+        storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
         variables = null,
       } = options;
 
@@ -525,14 +626,12 @@ function createSkulptRunner() {
       }
       try {
         if (loadVariablesBeforeRun) {
-          Object.entries(
-            window.pythonRunner.loadedEngines[engine].variables
-          ).forEach(
+          Object.entries(pythonRunner.loadedEngines[engine].variables).forEach(
             ([name, value]) =>
               (window.Sk.builtins[name] = window.Sk.ffi.remapToPy(value))
           );
         } else {
-          await window.pythonRunner.loadedEngines[engine].clearVariables();
+          await pythonRunner.loadedEngines[engine].clearVariables();
         }
 
         // Add new variables
@@ -545,10 +644,10 @@ function createSkulptRunner() {
 
         await new Promise(async (resolve, reject) => {
           window.Sk.configure({
-            output: window.pythonRunner.options.output,
+            output: pythonRunner.options.output,
             read: builtinRead,
             __future__:
-              window.pythonRunner.pythonVersion === 2
+              pythonRunner.pythonVersion === 2
                 ? window.Sk.python2
                 : window.Sk.python3,
           });
@@ -561,12 +660,12 @@ function createSkulptRunner() {
         });
 
         if (storeVariablesAfterRun) {
-          window.pythonRunner.loadedEngines[engine].variables = {
-            ...window.pythonRunner.loadedEngines[engine].variables,
+          pythonRunner.loadedEngines[engine].variables = {
+            ...pythonRunner.loadedEngines[engine].variables,
             ...Object.entries(window.Sk.globals)
               .filter(
                 ([name]) =>
-                  !window.pythonRunner.loadedEngines[
+                  !pythonRunner.loadedEngines[
                     engine
                   ].predefinedVariables.includes(name)
               )
@@ -580,10 +679,8 @@ function createSkulptRunner() {
           };
         }
       } catch (ex) {
-        if (typeof window.pythonRunner.options.error === 'function') {
-          window.pythonRunner.options.error(
-            interpretErrorMessage(ex, code, engine)
-          );
+        if (typeof pythonRunner.options.error === 'function') {
+          pythonRunner.options.error(interpretErrorMessage(ex, code, engine));
         } else {
           throw interpretErrorMessage(ex, code, engine);
         }
@@ -601,17 +698,17 @@ function createSkulptRunner() {
     ) => {
       if (onlyShowNewVariables && filter === null) {
         if (includeValues) {
-          return window.pythonRunner.loadedEngines[engine].variables;
+          return pythonRunner.loadedEngines[engine].variables;
         }
-        return Object.keys(window.pythonRunner.loadedEngines[engine].variables);
+        return Object.keys(pythonRunner.loadedEngines[engine].variables);
       } else {
         let variables = Object.entries(window.Sk.globals);
         if (onlyShowNewVariables) {
           variables = variables.filter(
             ([name]) =>
-              !window.pythonRunner.loadedEngines[
-                engine
-              ].predefinedVariables.includes(name)
+              !pythonRunner.loadedEngines[engine].predefinedVariables.includes(
+                name
+              )
           );
         }
         if (filter) {
@@ -636,32 +733,32 @@ function createSkulptRunner() {
     },
 
     setVariable: async (name, value) => {
-      window.pythonRunner.loadedEngines[engine].variables[name] = value;
+      pythonRunner.loadedEngines[engine].variables[name] = value;
     },
 
     setVariables: async (variables) => {
       Object.entries(variables).forEach(([name, value]) => {
-        window.pythonRunner.loadedEngines[engine].variables[name] = value;
+        pythonRunner.loadedEngines[engine].variables[name] = value;
       });
     },
 
     clearVariable: async (name) => {
       delete window.Sk.builtins[name];
-      if (name in window.pythonRunner.loadedEngines[engine].variables) {
-        delete window.pythonRunner.loadedEngines[engine].variables[name];
+      if (name in pythonRunner.loadedEngines[engine].variables) {
+        delete pythonRunner.loadedEngines[engine].variables[name];
       }
     },
 
     clearVariables: async () => {
-      Object.keys(window.pythonRunner.loadedEngines[engine].variables).forEach(
+      Object.keys(pythonRunner.loadedEngines[engine].variables).forEach(
         (name) => delete window.Sk.builtins[name]
       );
-      window.pythonRunner.loadedEngines[engine].variables = {};
+      pythonRunner.loadedEngines[engine].variables = {};
     },
   };
 
-  window.pythonRunner.loadedEngines[engine].runCode('1');
-  window.pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
+  pythonRunner.loadedEngines[engine].runCode('1');
+  pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
     window.Sk.globals
   );
 }
@@ -674,16 +771,14 @@ async function createBrythonRunner() {
         resolve();
       },
       stdout: {
-        write: (arg) => window.pythonRunner.options.output(arg),
+        write: (arg) => pythonRunner.options.output(arg),
         flush() {},
       },
       stderr: {
         write: (ex) => {
-          const code = window.pythonRunner.loadedEngines[engine].currentCode;
-          if (typeof window.pythonRunner.options.error === 'function') {
-            window.pythonRunner.options.error(
-              interpretErrorMessage(ex, code, engine)
-            );
+          const code = pythonRunner.loadedEngines[engine].currentCode;
+          if (typeof pythonRunner.options.error === 'function') {
+            pythonRunner.options.error(interpretErrorMessage(ex, code, engine));
           } else {
             throw interpretErrorMessage(ex, code, engine);
           }
@@ -691,34 +786,38 @@ async function createBrythonRunner() {
         flush() {},
       },
       stdin: {
-        readline: async () => await window.pythonRunner.options.input,
+        readline: async () => await pythonRunner.options.input,
       },
     });
 
-    window.pythonRunner.loadedEngines[engine] = {
+    pythonRunner.loadedEngines[engine] = {
       engine,
-      brython: runner,
-      predefinedVariables: [],
+      runnerReference: runner,
+      predefinedVariables: [
+        '__class__',
+        '__doc__',
+        '__file__',
+        '__name__',
+        '__package__',
+      ],
       variables: {},
 
       runCode: async (code, options = {}) => {
         const {
-          loadVariablesBeforeRun = window.pythonRunner.options
-            .loadVariablesBeforeRun,
-          storeVariablesAfterRun = window.pythonRunner.options
-            .storeVariablesAfterRun,
+          loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
+          storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
           variables = null,
         } = options;
 
         const prependedCode = [];
 
         if (loadVariablesBeforeRun) {
-          Object.entries(
-            window.pythonRunner.loadedEngines[engine].variables
-          ).forEach(([name, value]) => prependedCode.push(name + '=' + value));
+          Object.entries(pythonRunner.loadedEngines[engine].variables).forEach(
+            ([name, value]) => prependedCode.push(name + '=' + value)
+          );
           prependedCode.push('\n');
         } else {
-          await window.pythonRunner.loadedEngines[engine].clearVariables();
+          await pythonRunner.loadedEngines[engine].clearVariables();
         }
 
         // Add new variables
@@ -730,7 +829,7 @@ async function createBrythonRunner() {
           });
         }
 
-        window.pythonRunner.loadedEngines[engine].currentCode = code;
+        pythonRunner.loadedEngines[engine].currentCode = code;
         // !Getting variables are really hacky. Should consider using a
         // !non-webworker Brython implementation in the future
         if (storeVariablesAfterRun) {
@@ -746,7 +845,7 @@ async function createBrythonRunner() {
                     const [key, ...valueArr] = keyValue.split(':');
                     if (
                       key &&
-                      !window.pythonRunner.loadedEngines[
+                      !pythonRunner.loadedEngines[
                         engine
                       ].predefinedVariables.includes(key)
                     ) {
@@ -771,8 +870,7 @@ async function createBrythonRunner() {
                       }
                     }
                   });
-                window.pythonRunner.loadedEngines[engine].variables =
-                  newVariables;
+                pythonRunner.loadedEngines[engine].variables = newVariables;
               } else {
                 output(...result);
               }
@@ -790,7 +888,7 @@ async function createBrythonRunner() {
       },
 
       getVariable: async (name) =>
-        window.pythonRunner.loadedEngines[engine].variables[name],
+        pythonRunner.loadedEngines[engine].variables[name],
 
       getVariables: async (
         includeValues = true,
@@ -799,95 +897,98 @@ async function createBrythonRunner() {
       ) => {
         if (includeValues) {
           if (filter) {
-            return Object.keys(
-              window.pythonRunner.loadedEngines[engine].variables
-            )
+            return Object.keys(pythonRunner.loadedEngines[engine].variables)
               .filter(filter)
               .reduce((acc, name) => {
                 return {
                   ...acc,
-                  [name]:
-                    window.pythonRunner.loadedEngines[engine].variables[name],
+                  [name]: pythonRunner.loadedEngines[engine].variables[name],
                 };
               }, {});
           }
-          return window.pythonRunner.loadedEngines[engine].variables;
+          return pythonRunner.loadedEngines[engine].variables;
         }
         if (filter) {
           return Object.keys(
-            window.pythonRunner.loadedEngines[engine].variables
+            pythonRunner.loadedEngines[engine].variables
           ).filter(filter);
         }
-        return Object.keys(window.pythonRunner.loadedEngines[engine].variables);
+        return Object.keys(pythonRunner.loadedEngines[engine].variables);
       },
 
       setVariable: async (name, value) => {
-        window.pythonRunner.loadedEngines[engine].variables[name] = value;
+        pythonRunner.loadedEngines[engine].variables[name] = value;
       },
 
       setVariables: async (variables) => {
         Object.entries(variables).forEach(([name, value]) => {
-          window.pythonRunner.loadedEngines[engine].variables[name] = value;
+          pythonRunner.loadedEngines[engine].variables[name] = value;
         });
       },
 
       clearVariable: async (name) => {
-        delete window.pythonRunner.loadedEngines[engine].variables[name];
+        delete pythonRunner.loadedEngines[engine].variables[name];
       },
 
       clearVariables: async () => {
-        window.pythonRunner.loadedEngines[engine].variables = {};
+        pythonRunner.loadedEngines[engine].variables = {};
       },
     };
-
-    window.pythonRunner.loadedEngines[engine].predefinedVariables = [
-      '__class__',
-      '__doc__',
-      '__file__',
-      '__name__',
-      '__package__',
-    ];
   });
 }
 
-window.pythonRunner.loadEngines = async function (engines) {
-  return await Promise.all(engines.map(window.pythonRunner.loadEngine));
+/**
+ * @callback LoadEngines
+ * @param {Engine[]} engines
+ */
+export const loadEngines = async function (engines) {
+  return await Promise.all(engines.map(loadEngine));
 };
 
-window.pythonRunner.runCode = async function (code, userOptions = {}) {
-  const { use: specificEngine = window.pythonRunner.currentEngine } =
-    userOptions;
+/**
+ * @callback RunCode
+ * @param {{use: Engine}=} userOptions
+ */
+export const runCode = async function (code, userOptions = {}) {
+  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].runCode(
+  return await pythonRunner.loadedEngines[specificEngine].runCode(
     code,
     userOptions
   );
 };
 
-window.pythonRunner.getVariable = async function (name, userOptions = {}) {
-  const { use: specificEngine = window.pythonRunner.currentEngine } =
-    userOptions;
+/**
+ * @callback GetVariable
+ * @param {{use: Engine}=} userOptions
+ * @returns {any}
+ */
+export const getVariable = async function (name, userOptions = {}) {
+  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].getVariable(
-    name
-  );
+  return await pythonRunner.loadedEngines[specificEngine].getVariable(name);
 };
 
-window.pythonRunner.getVariables = async function (
+/**
+ * @callback GetVariables
+ * @param {{use: Engine, includeValues: boolean, filter: null | (name) => boolean, onlyShowNewVariables: boolean}=} userOptions
+ * @returns {Variables|string[]}
+ */
+export const getVariables = async function (
   userOptions = {
     includeValues: true,
     filter: null,
@@ -895,113 +996,116 @@ window.pythonRunner.getVariables = async function (
   }
 ) {
   const {
-    use: specificEngine = window.pythonRunner.currentEngine,
+    use: specificEngine = pythonRunner.currentEngine,
     includeValues = true,
     filter = null,
     onlyShowNewVariables = true,
   } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].getVariables(
+  return await pythonRunner.loadedEngines[specificEngine].getVariables(
     includeValues,
     filter,
     onlyShowNewVariables
   );
 };
 
-window.pythonRunner.setVariable = async function (
-  name,
-  value,
-  userOptions = {}
-) {
-  const { use: specificEngine = window.pythonRunner.currentEngine } =
-    userOptions;
+/**
+ * @callback SetVariable
+ * @param {string} name
+ * @param {any} value
+ * @param {{use: Engine}=} userOptions
+ */
+export const setVariable = async function (name, value, userOptions = {}) {
+  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].setVariable(
+  return await pythonRunner.loadedEngines[specificEngine].setVariable(
     name,
     value
   );
 };
 
-window.pythonRunner.setVariables = async function (
-  variables,
-  userOptions = {}
-) {
-  const { use: specificEngine = window.pythonRunner.currentEngine } =
-    userOptions;
+/**
+ * @callback SetVariables
+ * @param {Variables} variables
+ * @param {{use: Engine}=} userOptions
+ */
+export const setVariables = async function (variables, userOptions = {}) {
+  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].setVariables(
+  return await pythonRunner.loadedEngines[specificEngine].setVariables(
     variables
   );
 };
 
-window.pythonRunner.clearVariable = async function (name, userOptions = {}) {
-  const { use: specificEngine = window.pythonRunner.currentEngine } =
-    userOptions;
+/**
+ * @callback ClearVariable
+ * @param {string} name
+ * @param {{use: Engine}=} userOptions
+ */
+export const clearVariable = async function (name, userOptions = {}) {
+  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[specificEngine].clearVariable(
-    name
-  );
+  return await pythonRunner.loadedEngines[specificEngine].clearVariable(name);
 };
 
-window.pythonRunner.clearVariables = async function (userOptions = {}) {
-  const { use: specificEngine = window.pythonRunner.currentEngine } =
-    userOptions;
+/**
+ * @callback ClearVariables
+ * @param {{use: Engine}=} userOptions
+ */
+export const clearVariables = async function (userOptions = {}) {
+  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!window.pythonRunner.hasEngine(specificEngine)) {
-    const didLoad = await window.pythonRunner.loadEngine(specificEngine);
+  if (!hasEngine(specificEngine)) {
+    const didLoad = await loadEngine(specificEngine);
     if (!didLoad) {
       throw new Error('Could not find the ' + specificEngine + ' engine');
     }
   }
 
-  return await window.pythonRunner.loadedEngines[
-    specificEngine
-  ].clearVariables();
+  return await pythonRunner.loadedEngines[specificEngine].clearVariables();
 };
 
-const pythonRunner = window.pythonRunner;
+pythonRunner.setEngine = setEngine;
+pythonRunner.loadEngine = loadEngine;
+pythonRunner.loadEngines = loadEngines;
+pythonRunner.runCode = runCode;
+pythonRunner.getOptions = getOptions;
+pythonRunner.setOptions = setOptions;
+pythonRunner.getVariable = getVariable;
+pythonRunner.getVariables = getVariables;
+pythonRunner.setVariable = setVariable;
+pythonRunner.setVariables = setVariables;
+pythonRunner.clearVariable = clearVariable;
+pythonRunner.clearVariables = clearVariables;
 
-export const setEngine = pythonRunner.setEngine;
-export const loadEngine = pythonRunner.loadEngine;
-export const loadEngines = pythonRunner.loadEngines;
-export const runCode = pythonRunner.runCode;
-export const getOptions = pythonRunner.getOptions;
-export const setOptions = pythonRunner.setOptions;
-
-// TODO: Add native options for dealing with variables
-export const getVariable = pythonRunner.getVariable;
-export const getVariables = pythonRunner.getVariables;
-export const setVariable = pythonRunner.setVariable;
-export const setVariables = pythonRunner.setVariables;
-export const clearVariable = pythonRunner.clearVariable;
-export const clearVariables = pythonRunner.clearVariables;
+window.pythonRunner = pythonRunner;
 
 export default pythonRunner;
