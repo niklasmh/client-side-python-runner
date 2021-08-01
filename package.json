@@ -10,6 +10,7 @@
   },
   "scripts": {
     "examples": "npx serve",
+    "test": "jest",
     "build": "tsc",
     "prepublishOnly": "node prepare",
     "develop": "node prepare develop"
@@ -27,6 +28,31 @@
   },
   "homepage": "https://github.com/niklasmh/client-side-python-runner#readme",
   "devDependencies": {
+    "@babel/core": "7.14.8",
+    "@babel/preset-env": "7.14.8",
+    "@types/jest": "26.0.24",
+    "@types/node": "^16.4.10",
+    "babel-jest": "27.0.6",
+    "jest": "27.0.6",
     "typescript": "4.3.5"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ]
+    ]
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    },
+    "testEnvironment": "jsdom",
+    "testRegex": "/.+\\.test\\.js$"
   }
 }
