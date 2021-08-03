@@ -4,7 +4,7 @@
 /** @type {Engine} */
 const defaultPythonEngine = 'pyodide';
 
-const URLS = {
+const engines = {
   pyodide: {
     loader: 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/pyodide.js',
     indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/',
@@ -22,7 +22,7 @@ const URLS = {
 /**
  * @typedef {Object} Options
  * @property {(...data) => void} output The output from Python print()-functions
- * @property {null | (error?: Error) => void} error Parsed Python error messages
+ * @property {null | (error?: PythonError) => void} error Parsed Python error messages
  * @property {(message: string, _default?: string) => void} input Python input()-function
  * @property {number} pythonVersion
  * @property {boolean} loadVariablesBeforeRun
@@ -104,14 +104,25 @@ const log = function (input, color = '#aaa', style = 'font-weight:bold') {
 /**
  * @function hasEngine
  * @param {Engine} engine
+ * @returns {boolean}
  */
 export function hasEngine(engine) {
   return engine in pythonRunner.loadedEngines;
 }
 
 /**
+ * @function engineExists
+ * @param {Engine} engine
+ * @returns {boolean}
+ */
+export function engineExists(engine) {
+  return engine in engines;
+}
+
+/**
  * @function isLoadingEngine
  * @param {Engine} engine
+ * @returns {boolean}
  */
 function isLoadingEngine(engine) {
   return engine in pythonRunner.loadingEngines;
@@ -144,6 +155,7 @@ export function setOptions(options) {
 }
 
 /**
+ * @async
  * @function setEngine
  * @param {Engine} engine
  */
@@ -202,7 +214,7 @@ async function untilTheEngineIsLoaded(engine) {
 }
 
 /**
- * @typedef {Object} Error
+ * @typedef {Object} PythonError
  * @property {number} columnNumber
  * @property {Engine} engine
  * @property {Error} error
@@ -220,7 +232,7 @@ async function untilTheEngineIsLoaded(engine) {
  * @param {any} error
  * @param {string} code
  * @param {string} engine
- * @returns {Error}
+ * @returns {PythonError}
  */
 export function interpretErrorMessage(error, code, engine) {
   const codeLines = code.split('\n');
@@ -325,13 +337,24 @@ export function interpretErrorMessage(error, code, engine) {
 }
 
 /**
+ * @async
  * @function loadEngine
  * @param {Engine} engine
+ * @returns {boolean} If engine was loaded (or already loaded)
+ * @throws {Error} If engine does not exist
  */
 export async function loadEngine(
   engine = pythonRunner.currentEngine,
   { useEngine = false } = {}
 ) {
+  if (!engineExists(engine)) {
+    throw new Error(
+      'Engine "' +
+        engine +
+        '" does not exist. Want it to be included? File an issue here: https://github.com/niklasmh/client-side-python-runner/issues'
+    );
+  }
+
   if (hasEngine(engine)) {
     if (useEngine) pythonRunner.currentEngine = engine;
     return true;
@@ -359,30 +382,30 @@ export async function loadEngine(
 
   switch (engine) {
     case 'pyodide': {
-      const scriptWasLoaded = await loadScript(URLS.pyodide.loader);
+      const scriptWasLoaded = await loadScript(engines.pyodide.loader);
       if (!scriptWasLoaded)
-        throw new Error('Could not reach "' + URLS.pyodide.loader + '"');
-      await window.loadPyodide({ indexURL: URLS.pyodide.indexURL });
+        throw new Error('Could not reach "' + engines.pyodide.loader + '"');
+      await window.loadPyodide({ indexURL: engines.pyodide.indexURL });
       createPyodideRunner();
       break;
     }
 
     case 'skulpt': {
-      const script1WasLoaded = await loadScript(URLS.skulpt.loader);
-      const script2WasLoaded = await loadScript(URLS.skulpt.library);
+      const script1WasLoaded = await loadScript(engines.skulpt.loader);
+      const script2WasLoaded = await loadScript(engines.skulpt.library);
       if (!script1WasLoaded)
-        throw new Error('Could not reach "' + URLS.skulpt.loader + '"');
+        throw new Error('Could not reach "' + engines.skulpt.loader + '"');
       if (!script2WasLoaded)
-        throw new Error('Could not reach "' + URLS.skulpt.library + '"');
+        throw new Error('Could not reach "' + engines.skulpt.library + '"');
       createSkulptRunner();
       break;
     }
 
     case 'brython': {
-      const scriptWasLoaded = await loadScript(URLS.brython.loader);
+      const scriptWasLoaded = await loadScript(engines.brython.loader);
       if (!scriptWasLoaded)
-        throw new Error('Could not reach "' + URLS.brython.loader + '"');
-      createBrythonRunner();
+        throw new Error('Could not reach "' + engines.brython.loader + '"');
+      await createBrythonRunner();
       break;
     }
 
@@ -401,6 +424,7 @@ export async function loadEngine(
 
   delete pythonRunner.loadingEngines[engine];
   pythonRunner.options.onLoaded(engine);
+  return true;
 }
 
 function createPyodideRunner() {
@@ -939,6 +963,7 @@ async function createBrythonRunner() {
 }
 
 /**
+ * @async
  * @function loadEngines
  * @param {Engine[]} engines
  */
@@ -947,8 +972,11 @@ export async function loadEngines(engines) {
 }
 
 /**
+ * @async
  * @function runCode
  * @param {{use: Engine}=} userOptions
+ * @returns {any=} Last result from pyodide. (Not the other runners)
+ * @throws {Error|PythonError} Invalid python engine | A python error
  */
 export async function runCode(code, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
@@ -962,6 +990,7 @@ export async function runCode(code, userOptions = {}) {
 }
 
 /**
+ * @async
  * @function getVariable
  * @param {{use: Engine}=} userOptions
  * @returns {any}
@@ -975,6 +1004,7 @@ export async function getVariable(name, userOptions = {}) {
 }
 
 /**
+ * @async
  * @function getVariables
  * @param {{use: Engine, includeValues: boolean, filter: null | (name) => boolean, onlyShowNewVariables: boolean}=} userOptions
  * @returns {Variables|string[]}
@@ -1003,6 +1033,7 @@ export async function getVariables(
 }
 
 /**
+ * @async
  * @function setVariable
  * @param {string} name
  * @param {any} value
@@ -1020,6 +1051,7 @@ export async function setVariable(name, value, userOptions = {}) {
 }
 
 /**
+ * @async
  * @function setVariables
  * @param {Variables} variables
  * @param {{use: Engine}=} userOptions
@@ -1035,6 +1067,7 @@ export async function setVariables(variables, userOptions = {}) {
 }
 
 /**
+ * @async
  * @function clearVariable
  * @param {string} name
  * @param {{use: Engine}=} userOptions
@@ -1048,6 +1081,7 @@ export async function clearVariable(name, userOptions = {}) {
 }
 
 /**
+ * @async
  * @function clearVariables
  * @param {{use: Engine}=} userOptions
  */

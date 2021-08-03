@@ -1,8 +1,15 @@
 /**
  * @function hasEngine
  * @param {Engine} engine
+ * @returns {boolean}
  */
 export function hasEngine(engine: Engine): boolean;
+/**
+ * @function engineExists
+ * @param {Engine} engine
+ * @returns {boolean}
+ */
+export function engineExists(engine: Engine): boolean;
 /**
  * @function getOptions
  * @returns {Options}
@@ -14,12 +21,13 @@ export function getOptions(): Options;
  */
 export function setOptions(options: Options): void;
 /**
+ * @async
  * @function setEngine
  * @param {Engine} engine
  */
 export function setEngine(engine: Engine): Promise<boolean>;
 /**
- * @typedef {Object} Error
+ * @typedef {Object} PythonError
  * @property {number} columnNumber
  * @property {Engine} engine
  * @property {Error} error
@@ -36,29 +44,37 @@ export function setEngine(engine: Engine): Promise<boolean>;
  * @param {any} error
  * @param {string} code
  * @param {string} engine
- * @returns {Error}
+ * @returns {PythonError}
  */
-export function interpretErrorMessage(error: any, code: string, engine: string): Error;
+export function interpretErrorMessage(error: any, code: string, engine: string): PythonError;
 /**
+ * @async
  * @function loadEngine
  * @param {Engine} engine
+ * @returns {boolean} If engine was loaded (or already loaded)
+ * @throws {Error} If engine does not exist
  */
 export function loadEngine(engine?: Engine, { useEngine }?: {
     useEngine?: boolean | undefined;
-}): Promise<boolean | undefined>;
+}): boolean;
 /**
+ * @async
  * @function loadEngines
  * @param {Engine[]} engines
  */
-export function loadEngines(engines: Engine[]): Promise<(boolean | undefined)[]>;
+export function loadEngines(engines: Engine[]): Promise<boolean[]>;
 /**
+ * @async
  * @function runCode
  * @param {{use: Engine}=} userOptions
+ * @returns {any=} Last result from pyodide. (Not the other runners)
+ * @throws {Error|PythonError} Invalid python engine | A python error
  */
 export function runCode(code: any, userOptions?: {
     use: Engine;
-} | undefined): Promise<any>;
+} | undefined): any | undefined;
 /**
+ * @async
  * @function getVariable
  * @param {{use: Engine}=} userOptions
  * @returns {any}
@@ -67,6 +83,7 @@ export function getVariable(name: any, userOptions?: {
     use: Engine;
 } | undefined): any;
 /**
+ * @async
  * @function getVariables
  * @param {{use: Engine, includeValues: boolean, filter: null | (name) => boolean, onlyShowNewVariables: boolean}=} userOptions
  * @returns {Variables|string[]}
@@ -78,6 +95,7 @@ export function getVariables(userOptions?: {
     onlyShowNewVariables: boolean;
 } | undefined): Variables | string[];
 /**
+ * @async
  * @function setVariable
  * @param {string} name
  * @param {any} value
@@ -87,6 +105,7 @@ export function setVariable(name: string, value: any, userOptions?: {
     use: Engine;
 } | undefined): Promise<any>;
 /**
+ * @async
  * @function setVariables
  * @param {Variables} variables
  * @param {{use: Engine}=} userOptions
@@ -95,6 +114,7 @@ export function setVariables(variables: Variables, userOptions?: {
     use: Engine;
 } | undefined): Promise<any>;
 /**
+ * @async
  * @function clearVariable
  * @param {string} name
  * @param {{use: Engine}=} userOptions
@@ -103,6 +123,7 @@ export function clearVariable(name: string, userOptions?: {
     use: Engine;
 } | undefined): Promise<any>;
 /**
+ * @async
  * @function clearVariables
  * @param {{use: Engine}=} userOptions
  */
@@ -110,7 +131,7 @@ export function clearVariables(userOptions?: {
     use: Engine;
 } | undefined): Promise<any>;
 export default pythonRunner;
-export type Error = {
+export type PythonError = {
     columnNumber: number;
     engine: Engine;
     error: Error;
@@ -131,7 +152,7 @@ export type Options = {
     /**
      * Parsed Python error messages
      */
-    error: ((error?: Error | undefined) => void) | null;
+    error: ((error?: PythonError | undefined) => void) | null;
     /**
      * Python input()-function
      */
@@ -236,5 +257,6 @@ declare const pythonRunner: PythonRunner;
 /**
  * @function isLoadingEngine
  * @param {Engine} engine
+ * @returns {boolean}
  */
 declare function isLoadingEngine(engine: Engine): boolean;
