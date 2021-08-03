@@ -1,3 +1,7 @@
+### Version 1.6.2
+
+- Make sure input objects have optional keys.
+
 ### Version 1.6.1
 
 - Add more tests.

@@ -18,8 +18,9 @@ Basic example:
 import { runCode, setEngine, setOptions } from 'client-side-python-runner';
 // OR import { runCode, setEngine, setOptions } from 'https://cdn.jsdelivr.net/npm/client-side-python-runner@latest';
 
+setOptions({ output: console.log });
+
 await setEngine('pyodide'); // Specify "skulpt", "pyodide" or "brython"
-await setOptions({ output: console.log });
 await runCode(`print("printed from pyodide")`);
 // You can now see the print output in the browser console
 ```
