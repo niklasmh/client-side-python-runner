@@ -418,6 +418,12 @@ npm run examples
 
 Then go to [localhost:5000/docs/](http://localhost:5000/docs/) to test it out.
 
+When done, we need to change the import URL in the demo (because it is hosted on GitHub :/):
+
+```
+npm run done
+```
+
 To generate types (from JSDoc comments in `index.js`):
 
 ```

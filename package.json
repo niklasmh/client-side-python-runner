@@ -13,7 +13,8 @@
     "test": "jest",
     "build": "tsc",
     "prepublishOnly": "node prepare",
-    "develop": "node prepare develop"
+    "develop": "node prepare develop",
+    "done": "node prepare"
   },
   "keywords": [
     "skulpt",
