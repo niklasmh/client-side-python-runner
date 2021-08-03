@@ -1,3 +1,9 @@
+### Version 1.6.1
+
+- Add more tests.
+- Fix types that did not get the correct signature.
+- Update docs with more detailed signatures on functions.
+
 ### Version 1.6.0
 
 - Add tests.
