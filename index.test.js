@@ -1,4 +1,4 @@
-import { interpretErrorMessage } from './index';
+import { interpretErrorMessage, loadEngine, runCode, setEngine } from './index';
 
 test('interpret skulpt error', () => {
   const message = interpretErrorMessage(
@@ -80,4 +80,16 @@ NameError: name 'undefinedvariable' is not defined`
   expect(message.lineNumber).toBe(1);
   expect(message.message).toBe("name 'undefinedvariable' is not defined");
   expect(message.type).toBe('NameError');
+});
+
+test('loadEngine on invalid engine should throw an error', () => {
+  return expect(loadEngine('invalid')).rejects.toThrowError();
+});
+
+test('setEngine on invalid engine should throw an error', () => {
+  return expect(setEngine('invalid')).rejects.toThrowError();
+});
+
+test('runCode on invalid engine should throw an error', () => {
+  return expect(runCode('a=1', { use: 'invalid' })).rejects.toThrowError();
 });
