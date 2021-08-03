@@ -51,13 +51,13 @@ const options = {
  * @property {string} currentCode
  * @property {string} engine
  * @property {string[]} predefinedVariables
- * @property {RunCode} runCode
- * @property {GetVariable} getVariable
- * @property {GetVariables} getVariables
- * @property {SetVariable} setVariable
- * @property {SetVariables} setVariables
- * @property {ClearVariable} clearVariable
- * @property {ClearVariables} clearVariables
+ * @property {runCode} runCode
+ * @property {getVariable} getVariable
+ * @property {getVariables} getVariables
+ * @property {setVariable} setVariable
+ * @property {setVariables} setVariables
+ * @property {clearVariable} clearVariable
+ * @property {clearVariables} clearVariables
  * @property {{[name: string]: any}} variables
  */
 
@@ -69,20 +69,20 @@ const options = {
  * @property {boolean} debug Turn on logging
  * @property {null | (output: string) => void} debugFunction
  * @property {Engine} currentEngine
- * @property {LoadEngine} loadEngine
- * @property {LoadEngines} loadEngines
- * @property {SetEngine} setEngine
- * @property {HasEngine} hasEngine
- * @property {IsLoadingEngine} isLoadingEngine
- * @property {GetOptions} getOptions
- * @property {SetOptions} setOptions
- * @property {RunCode} runCode
- * @property {GetVariable} getVariable
- * @property {GetVariables} getVariables
- * @property {SetVariable} setVariable
- * @property {SetVariables} setVariables
- * @property {ClearVariable} clearVariable
- * @property {ClearVariables} clearVariables
+ * @property {loadEngine} loadEngine
+ * @property {loadEngines} loadEngines
+ * @property {setEngine} setEngine
+ * @property {hasEngine} hasEngine
+ * @property {isLoadingEngine} isLoadingEngine
+ * @property {getOptions} getOptions
+ * @property {setOptions} setOptions
+ * @property {runCode} runCode
+ * @property {getVariable} getVariable
+ * @property {getVariables} getVariables
+ * @property {setVariable} setVariable
+ * @property {setVariables} setVariables
+ * @property {clearVariable} clearVariable
+ * @property {clearVariables} clearVariables
  * @property {Options} options
  */
 /** @type {PythonRunner} */
@@ -102,34 +102,34 @@ const log = function (input, color = '#aaa', style = 'font-weight:bold') {
 };
 
 /**
- * @callback HasEngine
+ * @function hasEngine
  * @param {Engine} engine
  */
-export const hasEngine = function (engine) {
+export function hasEngine(engine) {
   return engine in pythonRunner.loadedEngines;
-};
+}
 
 /**
- * @callback IsLoadingEngine
+ * @function isLoadingEngine
  * @param {Engine} engine
  */
-const isLoadingEngine = function (engine) {
+function isLoadingEngine(engine) {
   return engine in pythonRunner.loadingEngines;
-};
+}
 
 /**
- * @callback GetOptions
+ * @function getOptions
  * @returns {Options}
  */
-export const getOptions = function () {
+export function getOptions() {
   return pythonRunner.options;
-};
+}
 
 /**
- * @callback SetOptions
+ * @function setOptions
  * @param {Options} options
  */
-export const setOptions = function (options) {
+export function setOptions(options) {
   if ('pythonVersion' in options) {
     if ('skulpt' in pythonRunner.loadedEngines) {
       window.Sk.configure({
@@ -141,22 +141,20 @@ export const setOptions = function (options) {
     }
   }
   pythonRunner.options = { ...pythonRunner.options, ...options };
-};
+}
 
 /**
- * @callback SetEngine
+ * @function setEngine
  * @param {Engine} engine
  */
-export const setEngine = async function (engine) {
+export async function setEngine(engine) {
   if (!hasEngine(engine)) {
-    if (!(await loadEngine(engine))) {
-      return false;
-    }
+    await loadEngine(engine);
   }
   pythonRunner.currentEngine = engine;
   if (pythonRunner.debug) log('Using the ' + engine + ' engine', 'orange');
   return true;
-};
+}
 
 async function loadScript(url, timeout = 20000) {
   return new Promise((resolve, reject) => {
@@ -218,7 +216,7 @@ async function untilTheEngineIsLoaded(engine) {
  */
 
 /**
- * @callback InterpretErrorMessage
+ * @function interpretErrorMessage
  * @param {any} error
  * @param {string} code
  * @param {string} engine
@@ -327,10 +325,10 @@ export function interpretErrorMessage(error, code, engine) {
 }
 
 /**
- * @callback LoadEngine
+ * @function loadEngine
  * @param {Engine} engine
  */
-export const loadEngine = async function (
+export async function loadEngine(
   engine = pythonRunner.currentEngine,
   { useEngine = false } = {}
 ) {
@@ -362,7 +360,8 @@ export const loadEngine = async function (
   switch (engine) {
     case 'pyodide': {
       const scriptWasLoaded = await loadScript(URLS.pyodide.loader);
-      if (!scriptWasLoaded) return false;
+      if (!scriptWasLoaded)
+        throw new Error('Could not reach "' + URLS.pyodide.loader + '"');
       await window.loadPyodide({ indexURL: URLS.pyodide.indexURL });
       createPyodideRunner();
       break;
@@ -371,21 +370,25 @@ export const loadEngine = async function (
     case 'skulpt': {
       const script1WasLoaded = await loadScript(URLS.skulpt.loader);
       const script2WasLoaded = await loadScript(URLS.skulpt.library);
-      if (!script1WasLoaded || !script2WasLoaded) return false;
+      if (!script1WasLoaded)
+        throw new Error('Could not reach "' + URLS.skulpt.loader + '"');
+      if (!script2WasLoaded)
+        throw new Error('Could not reach "' + URLS.skulpt.library + '"');
       createSkulptRunner();
       break;
     }
 
     case 'brython': {
       const scriptWasLoaded = await loadScript(URLS.brython.loader);
-      if (!scriptWasLoaded) return false;
+      if (!scriptWasLoaded)
+        throw new Error('Could not reach "' + URLS.brython.loader + '"');
       createBrythonRunner();
       break;
     }
 
     default:
       if (pythonRunner.debug) log('Could not find ' + engine);
-      return false;
+      throw new Error('Could not load "' + engine + '" as it did not exist');
   }
 
   if (pythonRunner.debug) {
@@ -398,9 +401,7 @@ export const loadEngine = async function (
 
   delete pythonRunner.loadingEngines[engine];
   pythonRunner.options.onLoaded(engine);
-
-  return true;
-};
+}
 
 function createPyodideRunner() {
   const engine = 'pyodide';
@@ -938,57 +939,47 @@ async function createBrythonRunner() {
 }
 
 /**
- * @callback LoadEngines
+ * @function loadEngines
  * @param {Engine[]} engines
  */
-export const loadEngines = async function (engines) {
+export async function loadEngines(engines) {
   return await Promise.all(engines.map(loadEngine));
-};
+}
 
 /**
- * @callback RunCode
+ * @function runCode
  * @param {{use: Engine}=} userOptions
  */
-export const runCode = async function (code, userOptions = {}) {
+export async function runCode(code, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].runCode(
     code,
     userOptions
   );
-};
+}
 
 /**
- * @callback GetVariable
+ * @function getVariable
  * @param {{use: Engine}=} userOptions
  * @returns {any}
  */
-export const getVariable = async function (name, userOptions = {}) {
+export async function getVariable(name, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].getVariable(name);
-};
+}
 
 /**
- * @callback GetVariables
+ * @function getVariables
  * @param {{use: Engine, includeValues: boolean, filter: null | (name) => boolean, onlyShowNewVariables: boolean}=} userOptions
  * @returns {Variables|string[]}
  */
-export const getVariables = async function (
+export async function getVariables(
   userOptions = {
     includeValues: true,
     filter: null,
@@ -1002,96 +993,71 @@ export const getVariables = async function (
     onlyShowNewVariables = true,
   } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].getVariables(
     includeValues,
     filter,
     onlyShowNewVariables
   );
-};
+}
 
 /**
- * @callback SetVariable
+ * @function setVariable
  * @param {string} name
  * @param {any} value
  * @param {{use: Engine}=} userOptions
  */
-export const setVariable = async function (name, value, userOptions = {}) {
+export async function setVariable(name, value, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].setVariable(
     name,
     value
   );
-};
+}
 
 /**
- * @callback SetVariables
+ * @function setVariables
  * @param {Variables} variables
  * @param {{use: Engine}=} userOptions
  */
-export const setVariables = async function (variables, userOptions = {}) {
+export async function setVariables(variables, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].setVariables(
     variables
   );
-};
+}
 
 /**
- * @callback ClearVariable
+ * @function clearVariable
  * @param {string} name
  * @param {{use: Engine}=} userOptions
  */
-export const clearVariable = async function (name, userOptions = {}) {
+export async function clearVariable(name, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].clearVariable(name);
-};
+}
 
 /**
- * @callback ClearVariables
+ * @function clearVariables
  * @param {{use: Engine}=} userOptions
  */
-export const clearVariables = async function (userOptions = {}) {
+export async function clearVariables(userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) {
-    const didLoad = await loadEngine(specificEngine);
-    if (!didLoad) {
-      throw new Error('Could not find the ' + specificEngine + ' engine');
-    }
-  }
+  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
 
   return await pythonRunner.loadedEngines[specificEngine].clearVariables();
-};
+}
 
 pythonRunner.setEngine = setEngine;
 pythonRunner.loadEngine = loadEngine;
