@@ -21,14 +21,14 @@ const engines = {
 
 /**
  * @typedef {Object} Options
- * @property {(...data) => void} output The output from Python print()-functions
- * @property {null | (error?: PythonError) => void} error Parsed Python error messages
- * @property {(message: string, _default?: string) => void} input Python input()-function
- * @property {number} pythonVersion
- * @property {boolean} loadVariablesBeforeRun
- * @property {boolean} storeVariablesAfterRun
- * @property {(engine: Engine) => void} onLoading
- * @property {(engine: Engine) => void} onLoaded
+ * @property {(...data) => void=} output The output from Python print()-functions
+ * @property {null | (error?: PythonError) => void=} error Parsed Python error messages
+ * @property {(message: string, _default?: string) => void=} input Python input()-function
+ * @property {number=} pythonVersion
+ * @property {boolean=} loadVariablesBeforeRun
+ * @property {boolean=} storeVariablesAfterRun
+ * @property {(engine: Engine) => void=} onLoading
+ * @property {(engine: Engine) => void=} onLoaded
  */
 const options = {
   output: console.log,
@@ -974,7 +974,7 @@ export async function loadEngines(engines) {
 /**
  * @async
  * @function runCode
- * @param {{use: Engine}=} userOptions
+ * @param {{use?: Engine}=} userOptions
  * @returns {any=} Last result from pyodide. (Not the other runners)
  * @throws {Error|PythonError} Invalid python engine | A python error
  */
@@ -992,7 +992,7 @@ export async function runCode(code, userOptions = {}) {
 /**
  * @async
  * @function getVariable
- * @param {{use: Engine}=} userOptions
+ * @param {{use?: Engine}=} userOptions
  * @returns {any}
  */
 export async function getVariable(name, userOptions = {}) {
@@ -1006,7 +1006,7 @@ export async function getVariable(name, userOptions = {}) {
 /**
  * @async
  * @function getVariables
- * @param {{use: Engine, includeValues: boolean, filter: null | (name) => boolean, onlyShowNewVariables: boolean}=} userOptions
+ * @param {{use?: Engine, includeValues?: boolean, filter?: null | (name) => boolean, onlyShowNewVariables?: boolean}=} userOptions
  * @returns {Variables|string[]}
  */
 export async function getVariables(
@@ -1037,7 +1037,7 @@ export async function getVariables(
  * @function setVariable
  * @param {string} name
  * @param {any} value
- * @param {{use: Engine}=} userOptions
+ * @param {{use?: Engine}=} userOptions
  */
 export async function setVariable(name, value, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
@@ -1054,7 +1054,7 @@ export async function setVariable(name, value, userOptions = {}) {
  * @async
  * @function setVariables
  * @param {Variables} variables
- * @param {{use: Engine}=} userOptions
+ * @param {{use?: Engine}=} userOptions
  */
 export async function setVariables(variables, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
@@ -1070,7 +1070,7 @@ export async function setVariables(variables, userOptions = {}) {
  * @async
  * @function clearVariable
  * @param {string} name
- * @param {{use: Engine}=} userOptions
+ * @param {{use?: Engine}=} userOptions
  */
 export async function clearVariable(name, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
@@ -1083,7 +1083,7 @@ export async function clearVariable(name, userOptions = {}) {
 /**
  * @async
  * @function clearVariables
- * @param {{use: Engine}=} userOptions
+ * @param {{use?: Engine}=} userOptions
  */
 export async function clearVariables(userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
