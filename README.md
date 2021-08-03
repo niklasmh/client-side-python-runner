@@ -33,7 +33,7 @@ setOptions({
   output: console.log, // Output from print(...)-functions
   error: null, // Throws an exception unless this is set to a function
   input: prompt, // How to feed the input(...)-function
-  pythonVersion: 3,
+  pythonVersion: 3, // Preferred version
   loadVariablesBeforeRun: true,
   storeVariablesAfterRun: true,
   onLoading: (engine) => {},
@@ -168,8 +168,8 @@ window.pyodide.runPython("print('I am using pyodide directly instead')");
     - [`async loadEngines`](#async-loadengines)
     - [`async setEngine`](#async-setengine)
     - [`async runCode`](#async-runcode)
-    - [`async getOptions`](#async-getoptions)
-    - [`async setOptions`](#async-setoptions)
+    - [`getOptions`](#getoptions)
+    - [`setOptions`](#setoptions)
     - [`async getVariable`](#async-getvariable)
     - [`async getVariables`](#async-getvariables)
     - [`async setVariable`](#async-setvariable)
@@ -188,101 +188,157 @@ List of all exported functions:
 
 ### `async loadEngine`
 
-Parameters: `(engine: string, options = { useEngine: boolean = true })`
+Signature:
+
+```typescript
+async function loadEngine(
+  engine: string,
+  options = {
+    useEngine = true as boolean,
+  }
+);
+```
 
 Description: Load an engine.
 
 ### `async loadEngines`
 
-Parameters: `(engines: string[])`
+Signature:
+
+```typescript
+async function loadEngines(engines: string[]);
+```
 
 Load multiple engines. Waits until all of them are loaded.
 
 ### `async setEngine`
 
-Parameters: `(engine: string)`
-
 Set the current engine.
+
+Signature:
+
+```typescript
+async function setEngine(engine: string);
+```
 
 ### `async runCode`
 
-Parameters:
-
-```typescript
-(code: string, options = {
-  variables: object = {},
-  loadVariablesBeforeRun: boolean = true,
-  storeVariablesAfterRun: boolean = true,
-  use: string = currentEngine
-})
-```
-
 Run Python code using the current engine (or default if not set). This function will also return the result of the last line if possible (e.g. if 'pyodide' is the current engine).
 
-### `async getOptions`
+Signature:
+
+```typescript
+async function runCode(
+  code: string,
+  options = {
+    variables = {} as { [name: string]: any },
+    loadVariablesBeforeRun = true as boolean,
+    storeVariablesAfterRun = true as boolean,
+    use = currentEngine as string,
+  }
+);
+```
+
+### `getOptions`
 
 Get all options.
 
-### `async setOptions`
+### `setOptions`
 
-Parameters:
+Signature:
 
 ```typescript
-({
-  output: function(output) = console.log,
-  error: function(error) = null,
-  input: function(question) = window.prompt,
-  pythonVersion: number = 3,
-  loadVariablesBeforeRun: boolean = true,
-  storeVariablesAfterRun: boolean = true,
-  onLoading: function = (engine) => {},
-  onLoaded: function = (engine) => {},
-})
+function setOptions({
+  output = console.log as (...data: any[]) => void,
+  error = null as (error?: Error | undefined) => void | null,
+  input = window.prompt as (message: string, _default?: string) => string,
+  pythonVersion = 3 as number, // Preferred version
+  loadVariablesBeforeRun = true as boolean,
+  storeVariablesAfterRun = true as boolean,
+  onLoading = () => {} as (engine: string) => void,
+  onLoaded = () => {} as (engine: string) => void,
+});
 ```
 
 Set options. This will go in effect immediately.
 
 ### `async getVariable`
 
-Parameters: `(name: string, options = { use: string = currentEngine })`
+Signature:
+
+```typescript
+async function getVariable(
+  name: string,
+  options = {
+    use = currentEngine as string,
+  }
+);
+```
 
 ### `async getVariables`
 
-Parameters:
+Signature:
 
 ```typescript
-(options = {
-  use: string = currentEngine,
-  includeValues: boolean = true,
-  filter: function(name) | array | RegExp = null,
-  onlyShowNewVariables: boolean = true,
-})
+async function getVariables(
+  options = {
+    use = currentEngine as string,
+    includeValues = true as boolean,
+    filter = null as ((name: string) => boolean) | array | RegExp | null,
+    onlyShowNewVariables = true as boolean,
+  }
+);
 ```
 
 ### `async setVariable`
 
-Parameters: `(name: string, value: any, options = { use: string = currentEngine })`
+Signature:
+
+```typescript
+async function setVariable(
+  name: string,
+  value: any,
+  options = {
+    use = currentEngine as string,
+  }
+);
+```
 
 ### `async setVariables`
 
-Parameters:
+Signature:
 
 ```typescript
-(
+async function setVariables(
   variables: {
-    [name: string]: value (any)
+    [name: string]: any;
   },
-  options = { use: string = currentEngine }
-)
+  options = {
+    use = currentEngine as string,
+  }
+);
 ```
 
 ### `async clearVariable`
 
-Parameters: `(name: string, options = { use: string = currentEngine })`
+Signature:
+
+```typescript
+async function clearVariable(
+  name: string,
+  options = {
+    use = currentEngine as string,
+  }
+);
+```
 
 ### `async clearVariables`
 
-Parameters: `(options = { use: string = currentEngine })`
+Signature:
+
+```typescript
+async function clearVariables({ use = currentEngine as string });
+```
 
 ## Why
 
