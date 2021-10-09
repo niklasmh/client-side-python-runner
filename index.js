@@ -397,7 +397,7 @@ export async function loadEngine(
         throw new Error('Could not reach "' + engines.skulpt.loader + '"');
       if (!script2WasLoaded)
         throw new Error('Could not reach "' + engines.skulpt.library + '"');
-      createSkulptRunner();
+      await createSkulptRunner();
       break;
     }
 
@@ -782,9 +782,9 @@ function createSkulptRunner() {
     },
   };
 
-  pythonRunner.loadedEngines[engine].runCode('1');
+  await pythonRunner.loadedEngines[engine].runCode('1');
   pythonRunner.loadedEngines[engine].predefinedVariables = Object.keys(
-    window.Sk.globals
+    window.Sk.globals || {}
   );
 }
 
