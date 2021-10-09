@@ -101,7 +101,7 @@ setOptions({
 
   // Some engines can stop and wait for input, others
   // cannot. To be safe, prompt is the default as it
-  // stops JavaScript altogether and thereforeworks on
+  // stops JavaScript altogether and therefore works on
   // all cases.
   input: (question) => prompt(question),
 
@@ -412,9 +412,10 @@ You are also welcome to contribute with code as well, just fork the project, do 
 
 To test out the project - such that you do not need to set up an environment for yourself - you can run:
 
-```
+```bash
 npm run develop
 npm run examples
+npm run done # When done with contribution
 ```
 
 Then go to [localhost:5000/docs/](http://localhost:5000/docs/) to test it out.
