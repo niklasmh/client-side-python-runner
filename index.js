@@ -620,7 +620,7 @@ function createPyodideRunner() {
   ];
 }
 
-function createSkulptRunner() {
+async function createSkulptRunner() {
   const engine = 'skulpt';
 
   function builtinRead(x) {
