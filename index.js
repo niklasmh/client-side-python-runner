@@ -654,10 +654,6 @@ async function createSkulptRunner() {
         variables = null,
       } = options;
 
-      if (canvas) {
-        (window.Sk.TurtleGraphics || (window.Sk.TurtleGraphics = {})).target =
-          canvas;
-      }
       try {
         if (loadVariablesBeforeRun) {
           Object.entries(pythonRunner.loadedEngines[engine].variables).forEach(
