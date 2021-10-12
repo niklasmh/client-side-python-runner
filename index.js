@@ -623,13 +623,14 @@ function createPyodideRunner() {
 async function createSkulptRunner() {
   const engine = 'skulpt';
 
-  function builtinRead(x) {
+  function builtinRead(filename) {
     if (
       window.Sk.builtinFiles === undefined ||
-      window.Sk.builtinFiles['files'][x] === undefined
-    )
-      throw "File not found: '" + x + "'";
-    return window.Sk.builtinFiles['files'][x];
+      window.Sk.builtinFiles['files'][filename] === undefined
+    ) {
+      throw "File not found: '" + filename + "'";
+    }
+    return window.Sk.builtinFiles['files'][filename];
   }
 
   pythonRunner.loadedEngines[engine] = {
@@ -639,7 +640,9 @@ async function createSkulptRunner() {
     variables: {},
     runCode: async (code, options = {}) => {
       const {
-        canvas = null,
+        canvasWidth = null,
+        canvasHeight = null,
+        canvasParentId = null,
         loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
         storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
         variables = null,
@@ -676,8 +679,22 @@ async function createSkulptRunner() {
                 ? window.Sk.python2
                 : window.Sk.python3,
           });
+
+          if (canvasParentId) {
+            (
+              window.Sk.TurtleGraphics ||
+              (window.Sk.TurtleGraphics = {
+                width: canvasWidth,
+                height: canvasHeight,
+              })
+            ).target = canvasParentId;
+          }
+
           try {
-            await window.Sk.importMainWithBody('<stdin>', false, code);
+            const program = window.Sk.misceval.asyncToPromise(function () {
+              return window.Sk.importMainWithBody('<stdin>', false, code, true);
+            });
+            await program;
             resolve();
           } catch (err) {
             reject(err.toString());
@@ -697,7 +714,7 @@ async function createSkulptRunner() {
               .reduce(
                 (acc, [name, value]) => ({
                   ...acc,
-                  [name]: value.v,
+                  [name]: Sk.ffi.remapToJs(value),
                 }),
                 {}
               ),
@@ -749,7 +766,10 @@ async function createSkulptRunner() {
         }
         if (includeValues) {
           return variables.reduce(
-            (acc, [name, value]) => ({ ...acc, [name]: value.v }),
+            (acc, [name, value]) => ({
+              ...acc,
+              [name]: Sk.ffi.remapToJs(value),
+            }),
             {}
           );
         }
