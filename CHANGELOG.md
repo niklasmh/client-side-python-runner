@@ -1,3 +1,9 @@
+### Version 1.6.4
+
+- Fix turtle import in Skulpt
+- Add some more control to Skulpt canvas
+- Add first and last flag to loading methods
+
 ### Version 1.6.3
 
 - Add async signature to skulpt creator
