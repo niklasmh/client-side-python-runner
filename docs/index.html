@@ -18,6 +18,18 @@
       href="https://raw.githack.com/PrismJS/prism-themes/master/themes/prism-vsc-dark-plus.css"
       rel="stylesheet"
     />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/fontawesome.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/solid.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/brands.min.css"
+      rel="stylesheet"
+    />
     <style>
       body {
         font-family: 'Open Sans';
@@ -84,7 +96,13 @@
               title: 'Loading example',
               jsCode: `// This is not necessary unless you want to
 // load the engines separately from the execution
-await loadEngines(['skulpt', 'pyodide', 'brython'])`,
+await loadEngines(['skulpt', 'pyodide', 'brython'])
+
+// Use setOptions to set loading hooks (do this before the line above)
+setOptions({
+  onLoading: (engine, isFirst) => isFirst && setIsLoading(true),
+  onLoaded: (engine, isLast) => isLast && setIsLoading(false),
+})`,
               input: ``,
               engines: ['none'],
               showDebug: true,
@@ -327,7 +345,14 @@ else:
         return (
           <div className="flex gap-4 flex-wrap">
             {input && (
-              <OutputItem type="JavaScript Code" color="green">
+              <OutputItem
+                type={
+                  <>
+                    JavaScript Code <i className="fab fa-js-square" />
+                  </>
+                }
+                color="green"
+              >
                 <code className="language-javascript">{input}</code>
               </OutputItem>
             )}
@@ -352,7 +377,8 @@ else:
         const [output, setOutput] = React.useState('');
         const [error, setError] = React.useState('');
         const [loadVariablesBeforeRun, setLoadVariables] = React.useState(true);
-        const [storeVariablesAfterRun, setStoreVariables] = React.useState(true);
+        const [storeVariablesAfterRun, setStoreVariables] =
+          React.useState(true);
         const [code, setCode] = React.useState(`for i in range(10):
   print("i =", i)
 
@@ -377,12 +403,26 @@ undefinedvariable
               />
             </div>
             <div className="flex mt-4 gap-4 flex-wrap">
-              <label><input type="checkbox" checked={loadVariablesBeforeRun} onChange={e=>{
-                setLoadVariables(e.currentTarget.checked)
-              }} /> Load stored variables before run</label>
-              <label><input type="checkbox" checked={storeVariablesAfterRun} onChange={e=>{
-                setStoreVariables(e.currentTarget.checked)
-              }} /> Store variables after run</label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={loadVariablesBeforeRun}
+                  onChange={(e) => {
+                    setLoadVariables(e.currentTarget.checked);
+                  }}
+                />{' '}
+                Load stored variables before run
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={storeVariablesAfterRun}
+                  onChange={(e) => {
+                    setStoreVariables(e.currentTarget.checked);
+                  }}
+                />{' '}
+                Store variables after run
+              </label>
             </div>
             <div className="flex my-4 gap-4 flex-wrap">
               <Button
@@ -393,14 +433,17 @@ await runCode(\`${code}\`);`);
                   setOutput('');
                   setError('');
                   await setOptions({
-                    output: (arg) => setOutput(o => [...o, arg]),
+                    output: (arg) => setOutput((o) => [...o, arg]),
                     error: (arg) => {
                       console.error(arg);
                       setError(arg);
                     },
                   });
                   await setEngine('skulpt');
-                  await runCode(code, { loadVariablesBeforeRun, storeVariablesAfterRun });
+                  await runCode(code, {
+                    loadVariablesBeforeRun,
+                    storeVariablesAfterRun,
+                  });
                 }}
               />
               <Button
@@ -411,14 +454,17 @@ await runCode(\`${code}\`);`);
                   setOutput('');
                   setError('');
                   await setOptions({
-                    output: (arg) => setOutput(o => [...o, arg]),
+                    output: (arg) => setOutput((o) => [...o, arg]),
                     error: (arg) => {
                       console.error(arg);
                       setError(arg);
                     },
                   });
                   await setEngine('pyodide');
-                  await runCode(code, { loadVariablesBeforeRun, storeVariablesAfterRun });
+                  await runCode(code, {
+                    loadVariablesBeforeRun,
+                    storeVariablesAfterRun,
+                  });
                 }}
               />
               <Button
@@ -429,14 +475,17 @@ await runCode(\`${code}\`);`);
                   setOutput('');
                   setError('');
                   await setOptions({
-                    output: (arg) => setOutput(o => [...o, arg]),
+                    output: (arg) => setOutput((o) => [...o, arg]),
                     error: (arg) => {
                       console.error(arg);
                       setError(arg);
                     },
                   });
                   await setEngine('brython');
-                  await runCode(code, { loadVariablesBeforeRun, storeVariablesAfterRun });
+                  await runCode(code, {
+                    loadVariablesBeforeRun,
+                    storeVariablesAfterRun,
+                  });
                 }}
               />
               {input && (
@@ -463,10 +512,17 @@ await runCode(\`${code}\`);`);
         run,
         engines = null,
         showDebug = false,
+        isLoading = false,
       }) {
         const [output, setOutput] = React.useState('');
         const [error, setError] = React.useState('');
         const buttons = engines ? engines : ['skulpt', 'pyodide', 'brython'];
+        const buttonNames = {
+          skulpt: 'Skulpt',
+          pyodide: 'Pyodide',
+          brython: 'Brython',
+          brythonWebWorker: 'Brython (WebWorker)',
+        };
 
         return (
           <div>
@@ -484,7 +540,7 @@ await runCode(\`${code}\`);`);
                     }
 
                     await setOptions({
-                      output: (arg) => setOutput(o => [...o, arg]),
+                      output: (arg) => setOutput((o) => [...o, arg]),
                       error: (arg) => {
                         console.error(arg);
                         setError(arg);
@@ -504,13 +560,18 @@ await runCode(\`${code}\`);`);
                   }}
                   label={
                     engine === 'none' ? (
-                      'Load engines'
+                      <>
+                        <i
+                          className={
+                            'fas fa-sync mr-2' + (isLoading ? ' fa-spin' : '')
+                          }
+                        />{' '}
+                        Load engines
+                      </>
                     ) : (
                       <>
-                        Run using{' '}
-                        <span style={{ textTransform: 'capitalize' }}>
-                          {engine}
-                        </span>
+                        <i className="fas fa-play mr-2" />
+                        {buttonNames[engine]}
                       </>
                     )
                   }
@@ -525,25 +586,33 @@ await runCode(\`${code}\`);`);
         );
       }
 
-      function Examples({ example }) {
+      function Examples({ example, isLoading = false }) {
         const { sections, title } = examples[example];
 
         return (
           <div className="m-4">
             <Title>{title}</Title>
             {sections.map((section, i) => {
-              return <Example key={i} {...section} />;
+              return <Example key={i} {...section} isLoading={isLoading} />;
             })}
           </div>
         );
       }
 
       function App() {
+        const [isLoading, setIsLoading] = React.useState(false);
+
+        React.useEffect(() => {
+          setOptions({
+            onLoading: (engine, isFirst) => isFirst && setIsLoading(engine),
+            onLoaded: (engine, isLast) => isLast && setIsLoading(false),
+          });
+        }, []);
+
         return (
           <div className="container flex flex-col gap-8 mx-auto pb-20">
             <Sandbox />
-            <LoadingEngine />
-            <Examples example="loading" />
+            <Examples example="loading" isLoading={isLoading} />
             <Examples example="variables" />
             <Examples example="errors" />
           </div>
