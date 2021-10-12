@@ -96,7 +96,7 @@
               title: 'Loading example',
               jsCode: `// This is not necessary unless you want to
 // load the engines separately from the execution
-await loadEngines(['skulpt', 'pyodide', 'brython'])
+await loadEngines(['skulpt', 'pyodide', 'brython', 'brythonWebWorker'])
 
 // Use setOptions to set loading hooks (do this before the line above)
 setOptions({
@@ -107,7 +107,12 @@ setOptions({
               engines: ['none'],
               showDebug: true,
               run: async (input) => {
-                await loadEngines(['skulpt', 'pyodide', 'brython']);
+                await loadEngines([
+                  'skulpt',
+                  'pyodide',
+                  'brython',
+                  'brythonWebWorker',
+                ]);
               },
             },
             {
@@ -488,6 +493,27 @@ await runCode(\`${code}\`);`);
                   });
                 }}
               />
+              <Button
+                label="Run using Brython (WebWorker)"
+                onClick={async () => {
+                  setInput(`await setEngine('brythonWebWorker');
+await runCode(\`${code}\`);`);
+                  setOutput('');
+                  setError('');
+                  await setOptions({
+                    output: (arg) => setOutput((o) => [...o, arg]),
+                    error: (arg) => {
+                      console.error(arg);
+                      setError(arg);
+                    },
+                  });
+                  await setEngine('brythonWebWorker');
+                  await runCode(code, {
+                    loadVariablesBeforeRun,
+                    storeVariablesAfterRun,
+                  });
+                }}
+              />
               {input && (
                 <Button
                   color="bg-red-600"
@@ -516,7 +542,9 @@ await runCode(\`${code}\`);`);
       }) {
         const [output, setOutput] = React.useState('');
         const [error, setError] = React.useState('');
-        const buttons = engines ? engines : ['skulpt', 'pyodide', 'brython'];
+        const buttons = engines
+          ? engines
+          : ['skulpt', 'pyodide', 'brython', 'brythonWebWorker'];
         const buttonNames = {
           skulpt: 'Skulpt',
           pyodide: 'Pyodide',
