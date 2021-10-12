@@ -27,8 +27,8 @@ const engines = {
  * @property {number=} pythonVersion
  * @property {boolean=} loadVariablesBeforeRun
  * @property {boolean=} storeVariablesAfterRun
- * @property {(engine: Engine) => void=} onLoading
- * @property {(engine: Engine) => void=} onLoaded
+ * @property {(engine: Engine, isFirst: boolean) => void=} onLoading
+ * @property {(engine: Engine, isLast: boolean) => void=} onLoaded
  */
 const options = {
   output: console.log,
@@ -37,8 +37,8 @@ const options = {
   pythonVersion: 3,
   loadVariablesBeforeRun: true,
   storeVariablesAfterRun: true,
-  onLoading: (engine) => {},
-  onLoaded: (engine) => {},
+  onLoading: (engine, isFirst) => {},
+  onLoaded: (engine, isLast) => {},
 };
 
 /**
@@ -189,7 +189,7 @@ async function loadScript(url, timeout = 20000) {
 
     script.addEventListener('error', () => {
       pythonRunner.loadingScripts[url] = false;
-      reject('An error occured when loading script: ' + url);
+      reject('An error occurred when loading script: ' + url);
     });
 
     script.addEventListener('load', () => {
@@ -378,7 +378,10 @@ export async function loadEngine(
   }
 
   pythonRunner.loadingEngines[engine] = [];
-  pythonRunner.options.onLoading(engine);
+  pythonRunner.options.onLoading(
+    engine,
+    Object.keys(pythonRunner.loadingEngines).length === 1
+  );
 
   switch (engine) {
     case 'pyodide': {
@@ -423,7 +426,10 @@ export async function loadEngine(
   }
 
   delete pythonRunner.loadingEngines[engine];
-  pythonRunner.options.onLoaded(engine);
+  pythonRunner.options.onLoaded(
+    engine,
+    Object.keys(pythonRunner.loadingEngines).length === 0
+  );
   return true;
 }
 
@@ -860,7 +866,6 @@ async function createBrythonRunner() {
           Object.entries(pythonRunner.loadedEngines[engine].variables).forEach(
             ([name, value]) => prependedCode.push(name + '=' + value)
           );
-          prependedCode.push('\n');
         } else {
           await pythonRunner.loadedEngines[engine].clearVariables();
         }
@@ -923,12 +928,13 @@ async function createBrythonRunner() {
           });
           await runner.runCode(
             prependedCode.join(';') +
+              '\n' +
               code +
               '\nprint("vars():\\n" + "\\n".join([i+":"+("\\""+e+"\\"" if isinstance(e, str) else str(e)) for i,e in vars().items()]))\n'
           );
           await setOptions({ output });
         } else {
-          await runner.runCode(code);
+          await runner.runCode(prependedCode.join(';') + '\n' + code);
         }
       },
 
