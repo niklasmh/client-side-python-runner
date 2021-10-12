@@ -1,3 +1,8 @@
+### Version 1.6.3
+
+- Add async signature to skulpt creator
+- Fix issue with Skulpt not getting initial variables
+
 ### Version 1.6.2
 
 - Make sure input objects have optional keys.

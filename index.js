@@ -27,8 +27,8 @@ const engines = {
  * @property {number=} pythonVersion
  * @property {boolean=} loadVariablesBeforeRun
  * @property {boolean=} storeVariablesAfterRun
- * @property {(engine: Engine) => void=} onLoading
- * @property {(engine: Engine) => void=} onLoaded
+ * @property {(engine: Engine, isFirst: boolean) => void=} onLoading
+ * @property {(engine: Engine, isLast: boolean) => void=} onLoaded
  */
 const options = {
   output: console.log,
@@ -37,8 +37,8 @@ const options = {
   pythonVersion: 3,
   loadVariablesBeforeRun: true,
   storeVariablesAfterRun: true,
-  onLoading: (engine) => {},
-  onLoaded: (engine) => {},
+  onLoading: (engine, isFirst) => {},
+  onLoaded: (engine, isLast) => {},
 };
 
 /**
@@ -189,7 +189,7 @@ async function loadScript(url, timeout = 20000) {
 
     script.addEventListener('error', () => {
       pythonRunner.loadingScripts[url] = false;
-      reject('An error occured when loading script: ' + url);
+      reject('An error occurred when loading script: ' + url);
     });
 
     script.addEventListener('load', () => {
@@ -378,7 +378,10 @@ export async function loadEngine(
   }
 
   pythonRunner.loadingEngines[engine] = [];
-  pythonRunner.options.onLoading(engine);
+  pythonRunner.options.onLoading(
+    engine,
+    Object.keys(pythonRunner.loadingEngines).length === 1
+  );
 
   switch (engine) {
     case 'pyodide': {
@@ -423,7 +426,10 @@ export async function loadEngine(
   }
 
   delete pythonRunner.loadingEngines[engine];
-  pythonRunner.options.onLoaded(engine);
+  pythonRunner.options.onLoaded(
+    engine,
+    Object.keys(pythonRunner.loadingEngines).length === 0
+  );
   return true;
 }
 
@@ -623,13 +629,14 @@ function createPyodideRunner() {
 async function createSkulptRunner() {
   const engine = 'skulpt';
 
-  function builtinRead(x) {
+  function builtinRead(filename) {
     if (
       window.Sk.builtinFiles === undefined ||
-      window.Sk.builtinFiles['files'][x] === undefined
-    )
-      throw "File not found: '" + x + "'";
-    return window.Sk.builtinFiles['files'][x];
+      window.Sk.builtinFiles['files'][filename] === undefined
+    ) {
+      throw "File not found: '" + filename + "'";
+    }
+    return window.Sk.builtinFiles['files'][filename];
   }
 
   pythonRunner.loadedEngines[engine] = {
@@ -639,7 +646,9 @@ async function createSkulptRunner() {
     variables: {},
     runCode: async (code, options = {}) => {
       const {
-        canvas = null,
+        canvasWidth = null,
+        canvasHeight = null,
+        canvasParentId = null,
         loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
         storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
         variables = null,
@@ -676,8 +685,22 @@ async function createSkulptRunner() {
                 ? window.Sk.python2
                 : window.Sk.python3,
           });
+
+          if (canvasParentId) {
+            (
+              window.Sk.TurtleGraphics ||
+              (window.Sk.TurtleGraphics = {
+                width: canvasWidth,
+                height: canvasHeight,
+              })
+            ).target = canvasParentId;
+          }
+
           try {
-            await window.Sk.importMainWithBody('<stdin>', false, code);
+            const program = window.Sk.misceval.asyncToPromise(function () {
+              return window.Sk.importMainWithBody('<stdin>', false, code, true);
+            });
+            await program;
             resolve();
           } catch (err) {
             reject(err.toString());
@@ -697,7 +720,7 @@ async function createSkulptRunner() {
               .reduce(
                 (acc, [name, value]) => ({
                   ...acc,
-                  [name]: value.v,
+                  [name]: Sk.ffi.remapToJs(value),
                 }),
                 {}
               ),
@@ -749,7 +772,10 @@ async function createSkulptRunner() {
         }
         if (includeValues) {
           return variables.reduce(
-            (acc, [name, value]) => ({ ...acc, [name]: value.v }),
+            (acc, [name, value]) => ({
+              ...acc,
+              [name]: Sk.ffi.remapToJs(value),
+            }),
             {}
           );
         }
@@ -840,7 +866,6 @@ async function createBrythonRunner() {
           Object.entries(pythonRunner.loadedEngines[engine].variables).forEach(
             ([name, value]) => prependedCode.push(name + '=' + value)
           );
-          prependedCode.push('\n');
         } else {
           await pythonRunner.loadedEngines[engine].clearVariables();
         }
@@ -903,12 +928,13 @@ async function createBrythonRunner() {
           });
           await runner.runCode(
             prependedCode.join(';') +
+              '\n' +
               code +
               '\nprint("vars():\\n" + "\\n".join([i+":"+("\\""+e+"\\"" if isinstance(e, str) else str(e)) for i,e in vars().items()]))\n'
           );
           await setOptions({ output });
         } else {
-          await runner.runCode(code);
+          await runner.runCode(prependedCode.join(';') + '\n' + code);
         }
       },
 
