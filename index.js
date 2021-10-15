@@ -1,5 +1,5 @@
 /**
- * @typedef {"skulpt" | "pyodide" | "brython"} Engine
+ * @typedef {"skulpt" | "pyodide" | "brython" | "brythonWebWorker"} Engine
  */
 /** @type {Engine} */
 const defaultPythonEngine = 'pyodide';
@@ -14,6 +14,12 @@ const engines = {
     library: 'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt-stdlib.js',
   },
   brython: {
+    loader:
+      'https://cdnjs.cloudflare.com/ajax/libs/brython/3.9.0/brython.min.js',
+    library:
+      'https://cdnjs.cloudflare.com/ajax/libs/brython/3.9.0/brython_stdlib.js',
+  },
+  brythonWebWorker: {
     loader:
       'https://cdn.jsdelivr.net/npm/brython-runner/lib/brython-runner.bundle.js',
   },
@@ -300,7 +306,7 @@ export function interpretErrorMessage(error, code, engine) {
       // As we now have the line number we can get the line too
       line = codeLines[lineNumber - 1];
     } catch (ex) {}
-  } else if (engine === 'brython') {
+  } else if (engine === 'brython' || engine === 'brythonWebWorker') {
     // Get error type
     const trimmed = error.trim();
     const lines = trimmed.split('\n');
@@ -405,10 +411,23 @@ export async function loadEngine(
     }
 
     case 'brython': {
-      const scriptWasLoaded = await loadScript(engines.brython.loader);
-      if (!scriptWasLoaded)
+      const script1WasLoaded = await loadScript(engines.brython.loader);
+      const script2WasLoaded = await loadScript(engines.brython.library);
+      if (!script1WasLoaded)
         throw new Error('Could not reach "' + engines.brython.loader + '"');
+      if (!script2WasLoaded)
+        throw new Error('Could not reach "' + engines.brython.library + '"');
       await createBrythonRunner();
+      break;
+    }
+
+    case 'brythonWebWorker': {
+      const scriptWasLoaded = await loadScript(engines.brythonWebWorker.loader);
+      if (!scriptWasLoaded)
+        throw new Error(
+          'Could not reach "' + engines.brythonWebWorker.loader + '"'
+        );
+      await createBrythonWebWorkerRunner();
       break;
     }
 
@@ -812,6 +831,150 @@ async function createSkulptRunner() {
 
 async function createBrythonRunner() {
   const engine = 'brython';
+  pythonRunner.loadedEngines[engine] = {
+    engine,
+    runnerReference: window.__BRYTHON__,
+    predefinedVariables: [
+      '__class__',
+      '__doc__',
+      '__file__',
+      '__name__',
+      '__package__',
+      '__annotations__',
+      '__BRYTHON__',
+    ],
+    variables: {},
+    runCode: async (code, options = {}) => {
+      const {
+        loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
+        storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
+        variables = null,
+      } = options;
+
+      const prependedCode = [];
+
+      if (loadVariablesBeforeRun) {
+        Object.entries(pythonRunner.loadedEngines[engine].variables).forEach(
+          ([name, value]) => {
+            if (['number', 'string'].includes(typeof value))
+              prependedCode.push(name + '=' + value);
+          }
+        );
+      } else {
+        await pythonRunner.loadedEngines[engine].clearVariables();
+      }
+
+      // Add new variables
+      if (variables) {
+        Object.entries(variables).forEach(([name, value]) => {
+          try {
+            if (['number', 'string'].includes(typeof value))
+              prependedCode.push(name + '=' + value);
+          } catch (ex) {}
+        });
+      }
+
+      pythonRunner.loadedEngines[engine].currentCode = code;
+      window.brythonVariables = {};
+      if (storeVariablesAfterRun) {
+        try {
+          window.nice = 'cool';
+          const composedCode =
+            prependedCode.join(';') +
+            `import browser
+class Out:
+  def write(self, text):
+    browser.window.nice += text
+  def flush(self):
+    pass
+import sys # This fails
+sys.stdout = Out()
+sys.stderr = Out()
+`;
+          code + '\n#browser.window.brythonVariables = globals()\n';
+          console.log(composedCode);
+          const js = window.__BRYTHON__.python_to_js(composedCode);
+          console.log(js);
+          window.eval(js);
+          pythonRunner.loadedEngines[engine].variables = {
+            ...pythonRunner.loadedEngines[engine].variables,
+            ...Object.entries(window.brythonVariables)
+              .filter(
+                ([name]) =>
+                  !pythonRunner.loadedEngines[
+                    engine
+                  ].predefinedVariables.includes(name) && name.charAt(0) !== '$'
+              )
+              .reduce(
+                (acc, [name, value]) => ({
+                  ...acc,
+                  [name]: value,
+                }),
+                {}
+              ),
+          };
+        } catch (ex) {
+          console.log(ex);
+        }
+      } else {
+        const js = window.__BRYTHON__.python_to_js(
+          prependedCode.join(';') + '\n' + code + '\n'
+        );
+        window.eval(js);
+      }
+    },
+
+    getVariable: async (name) =>
+      pythonRunner.loadedEngines[engine].variables[name],
+
+    getVariables: async (
+      includeValues = true,
+      filter = null,
+      onlyShowNewVariables = true
+    ) => {
+      if (includeValues) {
+        if (filter) {
+          return Object.keys(pythonRunner.loadedEngines[engine].variables)
+            .filter(filter)
+            .reduce((acc, name) => {
+              return {
+                ...acc,
+                [name]: pythonRunner.loadedEngines[engine].variables[name],
+              };
+            }, {});
+        }
+        return pythonRunner.loadedEngines[engine].variables;
+      }
+      if (filter) {
+        return Object.keys(pythonRunner.loadedEngines[engine].variables).filter(
+          filter
+        );
+      }
+      return Object.keys(pythonRunner.loadedEngines[engine].variables);
+    },
+
+    setVariable: async (name, value) => {
+      pythonRunner.loadedEngines[engine].variables[name] = value;
+    },
+
+    setVariables: async (variables) => {
+      Object.entries(variables).forEach(([name, value]) => {
+        pythonRunner.loadedEngines[engine].variables[name] = value;
+      });
+    },
+
+    clearVariable: async (name) => {
+      delete pythonRunner.loadedEngines[engine].variables[name];
+    },
+
+    clearVariables: async () => {
+      pythonRunner.loadedEngines[engine].variables = {};
+    },
+  };
+}
+
+async function createBrythonWebWorkerRunner() {
+  const engine = 'brythonWebWorker';
   await new Promise((resolve) => {
     const runner = new BrythonRunner({
       onInit: () => {

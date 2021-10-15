@@ -1,6 +1,6 @@
 # Client-side Python runner
 
-Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt], [Brython][brython]
+Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt], [Brython][brython], [brythonWebWorker (BrythonRunner)][brython-runner]
 
 Try it out [here](https://niklasmh.github.io/client-side-python-runner/).
 
@@ -368,6 +368,8 @@ _DISCLAIMER: The numbers in the table are not scientifically calculated, thus th
 [skulpt-t]: https://skulpt.org/
 [brython]: https://brython.info/
 [brython-t]: https://brython.info/tests/editor.html
+[brython-runner]: https://github.com/pythonpad/brython-runner
+[brython-runner-t]: https://pythonpad.github.io/brython-runner/
 [rustpython]: https://brython.info/
 [rustpython-t]: https://rustpython.github.io/demo/
 [pypyjs]: https://github.com/pypyjs/pypyjs
