@@ -666,9 +666,7 @@ async function createSkulptRunner() {
     variables: {},
     runCode: async (code, options = {}) => {
       const {
-        canvasWidth = null,
-        canvasHeight = null,
-        canvasParentId = null,
+        turtleGraphics = {},
         loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
         storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
         variables = null,
@@ -702,14 +700,15 @@ async function createSkulptRunner() {
                 : window.Sk.python3,
           });
 
-          if (canvasParentId) {
-            (
-              window.Sk.TurtleGraphics ||
-              (window.Sk.TurtleGraphics = {
-                width: canvasWidth,
-                height: canvasHeight,
-              })
-            ).target = canvasParentId;
+          if (turtleGraphics) {
+            if (window.Sk.TurtleGraphics) {
+              window.Sk.TurtleGraphics = {
+                ...window.Sk.TurtleGraphics,
+                ...turtleGraphics,
+              };
+            } else {
+              window.Sk.TurtleGraphics = turtleGraphics;
+            }
           }
 
           try {
