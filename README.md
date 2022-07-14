@@ -84,7 +84,7 @@ import {
 // Load engines on beforehand
 await loadEngines(['pyodide', 'skulpt']);
 // OR
-await loadEngine('pyodide');
+await loadEngine('pyodide', { version: '0.17.0' }); // Set engine version
 await loadEngine('skulpt');
 
 // Set current engine
@@ -154,6 +154,9 @@ import { loadEngine } from 'client-side-python-runner';
 
 await loadEngine('pyodide');
 
+// You can specify engine version like this
+await loadEngine('pyodide', { version: '0.17.0' });
+
 // After this, the window.pyodide is ready
 window.pyodide.runPython("print('I am using pyodide directly instead')");
 ```
@@ -196,6 +199,7 @@ async function loadEngine(
   engine: string,
   options = {
     useEngine = true as boolean,
+    version = null as string,
   }
 );
 ```
@@ -214,12 +218,12 @@ Load multiple engines. Waits until all of them are loaded.
 
 ### `async setEngine`
 
-Set the current engine.
+Set the current engine and engine version.
 
 Signature:
 
 ```typescript
-async function setEngine(engine: string);
+async function setEngine(engine: string, version?: string);
 ```
 
 ### `async runCode`

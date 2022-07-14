@@ -1,3 +1,11 @@
+### Version 1.6.6
+
+- Add a general `turtleGraphics` option for Skulpt in `runCode`-options.
+
+### Version 1.6.5
+
+- Make it possible to set engine version in `loadEngine(engine, { version: '0.17.0' })` and `setEngine(engine, '0.17.0')`
+
 ### Version 1.6.4
 
 - Fix turtle import in Skulpt

@@ -6,16 +6,22 @@ const defaultPythonEngine = 'pyodide';
 
 const engines = {
   pyodide: {
-    loader: 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/pyodide.js',
-    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.17.0/full/',
+    loader: (version) =>
+      `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.js`,
+    indexURL: (version) => `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
+    versions: ['0.17.0', '0.18.1', '0.18.0', '0.17.0'], // 0.18.* fails to load somehow
   },
   skulpt: {
-    loader: 'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt.min.js',
-    library: 'https://cdn.jsdelivr.net/npm/skulpt@latest/dist/skulpt-stdlib.js',
+    loader: (version) =>
+      `https://cdn.jsdelivr.net/npm/skulpt@${version}/dist/skulpt.min.js`,
+    library: (version) =>
+      `https://cdn.jsdelivr.net/npm/skulpt@${version}/dist/skulpt-stdlib.js`,
+    versions: ['latest', '1.2.0', '1.0.0'],
   },
   brython: {
-    loader:
-      'https://cdn.jsdelivr.net/npm/brython-runner/lib/brython-runner.bundle.js',
+    loader: (version) =>
+      `https://cdn.jsdelivr.net/npm/brython-runner@${version}/lib/brython-runner.bundle.js`,
+    versions: ['latest', '1.0.10'],
   },
 };
 
@@ -159,9 +165,9 @@ export function setOptions(options) {
  * @function setEngine
  * @param {Engine} engine
  */
-export async function setEngine(engine) {
+export async function setEngine(engine, version = null) {
   if (!hasEngine(engine)) {
-    await loadEngine(engine);
+    await loadEngine(engine, { version });
   }
   pythonRunner.currentEngine = engine;
   if (pythonRunner.debug) log('Using the ' + engine + ' engine', 'orange');
@@ -345,7 +351,7 @@ export function interpretErrorMessage(error, code, engine) {
  */
 export async function loadEngine(
   engine = pythonRunner.currentEngine,
-  { useEngine = false } = {}
+  { useEngine = false, version = null } = {}
 ) {
   if (!engineExists(engine)) {
     throw new Error(
@@ -358,6 +364,10 @@ export async function loadEngine(
   if (hasEngine(engine)) {
     if (useEngine) pythonRunner.currentEngine = engine;
     return true;
+  }
+
+  if (version === null) {
+    version = engines[engine].versions[0];
   }
 
   if (pythonRunner.debug) {
@@ -385,29 +395,39 @@ export async function loadEngine(
 
   switch (engine) {
     case 'pyodide': {
-      const scriptWasLoaded = await loadScript(engines.pyodide.loader);
+      const scriptWasLoaded = await loadScript(engines.pyodide.loader(version));
       if (!scriptWasLoaded)
-        throw new Error('Could not reach "' + engines.pyodide.loader + '"');
-      await window.loadPyodide({ indexURL: engines.pyodide.indexURL });
+        throw new Error(
+          'Could not reach "' + engines.pyodide.loader(version) + '"'
+        );
+      await window.loadPyodide({ indexURL: engines.pyodide.indexURL(version) });
       createPyodideRunner();
       break;
     }
 
     case 'skulpt': {
-      const script1WasLoaded = await loadScript(engines.skulpt.loader);
-      const script2WasLoaded = await loadScript(engines.skulpt.library);
+      const script1WasLoaded = await loadScript(engines.skulpt.loader(version));
+      const script2WasLoaded = await loadScript(
+        engines.skulpt.library(version)
+      );
       if (!script1WasLoaded)
-        throw new Error('Could not reach "' + engines.skulpt.loader + '"');
+        throw new Error(
+          'Could not reach "' + engines.skulpt.loader(version) + '"'
+        );
       if (!script2WasLoaded)
-        throw new Error('Could not reach "' + engines.skulpt.library + '"');
+        throw new Error(
+          'Could not reach "' + engines.skulpt.library(version) + '"'
+        );
       await createSkulptRunner();
       break;
     }
 
     case 'brython': {
-      const scriptWasLoaded = await loadScript(engines.brython.loader);
+      const scriptWasLoaded = await loadScript(engines.brython.loader(version));
       if (!scriptWasLoaded)
-        throw new Error('Could not reach "' + engines.brython.loader + '"');
+        throw new Error(
+          'Could not reach "' + engines.brython.loader(version) + '"'
+        );
       await createBrythonRunner();
       break;
     }
@@ -646,9 +666,7 @@ async function createSkulptRunner() {
     variables: {},
     runCode: async (code, options = {}) => {
       const {
-        canvasWidth = null,
-        canvasHeight = null,
-        canvasParentId = null,
+        turtleGraphics = {},
         loadVariablesBeforeRun = pythonRunner.options.loadVariablesBeforeRun,
         storeVariablesAfterRun = pythonRunner.options.storeVariablesAfterRun,
         variables = null,
@@ -682,14 +700,15 @@ async function createSkulptRunner() {
                 : window.Sk.python3,
           });
 
-          if (canvasParentId) {
-            (
-              window.Sk.TurtleGraphics ||
-              (window.Sk.TurtleGraphics = {
-                width: canvasWidth,
-                height: canvasHeight,
-              })
-            ).target = canvasParentId;
+          if (turtleGraphics) {
+            if (window.Sk.TurtleGraphics) {
+              window.Sk.TurtleGraphics = {
+                ...window.Sk.TurtleGraphics,
+                ...turtleGraphics,
+              };
+            } else {
+              window.Sk.TurtleGraphics = turtleGraphics;
+            }
           }
 
           try {
