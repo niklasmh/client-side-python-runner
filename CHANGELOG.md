@@ -68,7 +68,7 @@
 - Update design on the docs.
 - Use monaco editor with python highlighting in the docs.
 - Fix line offset with Skulpt as of injecting variables before the code. Now defining the variables different.
-- Rename `storeStateBetweenRuns` to `loadVariablesBeforeRun` and `storeVariablesAfterRun` giving the user more control as well as understanding og what is actually happening when setting these.
+- Rename `storeStateBetweenRuns` to `loadVariablesBeforeRun` and `storeVariablesAfterRun` giving the user more control as well as understanding of what is actually happening when setting these.
 - Fix variable handling in Skulpt.
 
 ### Version 1.2.5
