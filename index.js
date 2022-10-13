@@ -9,7 +9,7 @@ const engines = {
     loader: (version) =>
       `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.js`,
     indexURL: (version) => `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
-    versions: ['0.17.0', '0.18.1', '0.18.0', '0.17.0'], // 0.18.* fails to load somehow
+    versions: ['0.21.3', '0.18.1', '0.18.0', '0.17.0'],
   },
   skulpt: {
     loader: (version) =>
