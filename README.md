@@ -180,7 +180,7 @@ window.pyodide.runPython("print('I am using pyodide directly instead')");
     - [`async setVariables`](#async-setvariables)
     - [`async clearVariable`](#async-clearvariable)
     - [`async clearVariables`](#async-clearvariables)
-  - [Why](#why)
+  - [Why I made this package](#why-i-made-this-package)
   - [Map of different Python runners](#map-of-different-python-runners)
   - [Versions](#versions)
   - [Later](#later)
@@ -345,7 +345,7 @@ Signature:
 async function clearVariables({ use = currentEngine as string });
 ```
 
-## Why
+## Why I made this package
 
 There are a lot of client-side Python runners out there, and they all have [benefits and disadvantages](https://stromberg.dnsalias.org/~strombrg/pybrowser/python-browser.html). Some can take a lot of loading time, and others are missing libraries you need (e.g. `numpy`) as well as core functionality (e.g. `time.sleep`). This package joins a few of the alternatives giving you the freedom to easily choose what you want in your project right now - without having to do major changes in your code. It also allows for using multiple interpreters at the same time!
 
@@ -357,13 +357,13 @@ The choices below are highly inspired by [this article](https://yasoob.me/2019/0
 
 _DISCLAIMER: The numbers in the table are not scientifically calculated, thus they have been ran on the same machine multiple times and measured using the same tool (Chrome DevTools with cache disabled)._
 
-| Python runner            | Python 3 | Python 2 | Computation\*              | Loading time | Memory   | Packages                                 |
-| ------------------------ | -------- | -------- | -------------------------- | ------------ | -------- | ---------------------------------------- |
-| [Pyodide][pyodide]       | ✔        |          | Fast (1.106s - WASM)       | ~1750ms      | ~7400kB  | [Most scientific libraries][pyodide-lib] |
-| [PyPy.js][pypyjs]        |          | ✔        | Very fast (0.034s - JS)    | ~1900ms      | ~15000kB | Browser                                  |
-| [Skulpt][skulpt]         | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurtleGraphics                           |
-| [Brython][brython]       | ✔        |          | Slow (3.445s - JS)         | ~200ms       | ~184kB   | Browser                                  |
-| [RustPython][rustpython] | ✔        |          | Very slow (11.567s - WASM) | ~200ms       | ~184kB   | Browser                                  |
+| Python runner             | Python 3 | Python 2 | Computation\*              | Loading time | Memory   | Packages                                 |
+| ------------------------- | -------- | -------- | -------------------------- | ------------ | -------- | ---------------------------------------- |
+| [Pyodide 0.21.3][pyodide] | ✔        |          | Very fast (0.259s - WASM)  | ~800ms       | ~6800kB  | [Most scientific libraries][pyodide-lib] |
+| [PyPy.js][pypyjs]         |          | ✔        | Very fast (0.034s - JS)    | ~1900ms      | ~15000kB | Browser                                  |
+| [Skulpt][skulpt]          | ✔        | ✔        | Fast (1.329s - JS)         | ~150ms       | ~227kB   | TurtleGraphics                           |
+| [Brython][brython]        | ✔        |          | Slow (3.445s - JS)         | ~200ms       | ~184kB   | Browser                                  |
+| [RustPython][rustpython]  | ✔        |          | Very slow (11.567s - WASM) | ~200ms       | ~184kB   | Browser                                  |
 
 [pyodide]: https://github.com/iodide-project/pyodide
 [pyodide-t]: https://alpha.iodide.io/notebooks/300/
