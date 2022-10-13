@@ -1,6 +1,6 @@
 # Client-side Python runner
 
-Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt], [Brython][brython]
+Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt], [Brython][brython].
 
 Try it out [here](https://niklasmh.github.io/client-side-python-runner/).
 
