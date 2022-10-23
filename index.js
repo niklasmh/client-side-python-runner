@@ -4,12 +4,27 @@
 /** @type {Engine} */
 const defaultPythonEngine = 'pyodide';
 
+const semverAbove = (version, isAbove, orEqual = true) => {
+  const [majorV, minorV, patchV] = version.split('.').map((n) => parseInt(n));
+  const [majorA, minorA, patchA] = isAbove.split('.').map((n) => parseInt(n));
+  if (majorV > majorA) return true;
+  if (majorV === majorA && minorV > minorA) return true;
+  if (majorV === majorA && minorV === minorA && patchV > patchA) return true;
+  if (orEqual) {
+    if (majorV === majorA && minorV === minorA && patchV === patchA)
+      return true;
+  }
+  return false;
+};
+
 const engines = {
   pyodide: {
     loader: (version) =>
-      `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.js`,
+      semverAbove(version, '0.18.0')
+        ? `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.mjs`
+        : `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.js`,
     indexURL: (version) => `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
-    versions: ['0.17.0', '0.18.1', '0.18.0', '0.17.0'], // 0.18.* fails to load somehow
+    versions: ['0.21.3', '0.18.1', '0.18.0', '0.17.0'],
   },
   skulpt: {
     loader: (version) =>
@@ -110,18 +125,26 @@ const log = function (input, color = '#aaa', style = 'font-weight:bold') {
 /**
  * @function hasEngine
  * @param {Engine} engine
+ * @param {string} version
  * @returns {boolean}
  */
-export function hasEngine(engine) {
+export function hasEngine(engine, version) {
+  if (version !== null) {
+    return engine + '@' + version in pythonRunner.loadedEngines;
+  }
   return engine in pythonRunner.loadedEngines;
 }
 
 /**
  * @function engineExists
  * @param {Engine} engine
+ * @param {string} version
  * @returns {boolean}
  */
-export function engineExists(engine) {
+export function engineExists(engine, version = null) {
+  if (version !== null) {
+    return engine in engines && engines[engine].versions.includes(version);
+  }
   return engine in engines;
 }
 
@@ -166,7 +189,7 @@ export function setOptions(options) {
  * @param {Engine} engine
  */
 export async function setEngine(engine, version = null) {
-  if (!hasEngine(engine)) {
+  if (!hasEngine(engine, version)) {
     await loadEngine(engine, { version });
   }
   pythonRunner.currentEngine = engine;
@@ -174,8 +197,8 @@ export async function setEngine(engine, version = null) {
   return true;
 }
 
-async function loadScript(url, timeout = 20000) {
-  return new Promise((resolve, reject) => {
+async function loadScript(url, moduleName = false, timeout = 20000) {
+  return new Promise(async (resolve, reject) => {
     if (url in pythonRunner.loadingScripts) {
       resolve(false);
       return;
@@ -183,26 +206,41 @@ async function loadScript(url, timeout = 20000) {
 
     pythonRunner.loadingScripts[url] = true;
 
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = url;
-    document.head.appendChild(script);
-
     const timeoutID = setTimeout(() => {
       pythonRunner.loadingScripts[url] = false;
       reject('Used too much time to load ' + url);
     }, timeout);
 
-    script.addEventListener('error', () => {
-      pythonRunner.loadingScripts[url] = false;
-      reject('An error occurred when loading script: ' + url);
-    });
+    if (moduleName) {
+      const script = document.createElement('script');
+      script.type = 'module';
+      window[moduleName + 'ModuleFinished'] = () => {
+        pythonRunner.loadingScripts[url] = false;
+        clearTimeout(timeoutID);
+        resolve(true);
+      };
+      script.text = `
+      import * as ${moduleName} from "${url}"
+      window.${moduleName} = ${moduleName}
+      window["${moduleName}ModuleFinished"]()
+      `;
+      document.head.appendChild(script);
+    } else {
+      const script = document.createElement('script');
+      script.src = url;
+      document.head.appendChild(script);
 
-    script.addEventListener('load', () => {
-      pythonRunner.loadingScripts[url] = false;
-      clearTimeout(timeoutID);
-      resolve(true);
-    });
+      script.addEventListener('error', () => {
+        pythonRunner.loadingScripts[url] = false;
+        reject('An error occurred when loading script: ' + url);
+      });
+
+      script.addEventListener('load', () => {
+        pythonRunner.loadingScripts[url] = false;
+        clearTimeout(timeoutID);
+        resolve(true);
+      });
+    }
   });
 }
 
@@ -353,7 +391,7 @@ export async function loadEngine(
   engine = pythonRunner.currentEngine,
   { useEngine = false, version = null } = {}
 ) {
-  if (!engineExists(engine)) {
+  if (!engineExists(engine, version)) {
     throw new Error(
       'Engine "' +
         engine +
@@ -361,7 +399,7 @@ export async function loadEngine(
     );
   }
 
-  if (hasEngine(engine)) {
+  if (hasEngine(engine, version)) {
     if (useEngine) pythonRunner.currentEngine = engine;
     return true;
   }
@@ -390,17 +428,35 @@ export async function loadEngine(
   pythonRunner.loadingEngines[engine] = [];
   pythonRunner.options.onLoading(
     engine,
+    version,
     Object.keys(pythonRunner.loadingEngines).length === 1
   );
 
   switch (engine) {
     case 'pyodide': {
-      const scriptWasLoaded = await loadScript(engines.pyodide.loader(version));
-      if (!scriptWasLoaded)
-        throw new Error(
-          'Could not reach "' + engines.pyodide.loader(version) + '"'
+      if (semverAbove(version, '0.18.0')) {
+        const scriptWasLoaded = await loadScript(
+          engines.pyodide.loader(version),
+          'pyodideModule'
         );
-      await window.loadPyodide({ indexURL: engines.pyodide.indexURL(version) });
+        if (!scriptWasLoaded)
+          throw new Error(
+            'Could not reach "' + engines.pyodide.loader(version) + '"'
+          );
+        window.pyodide = await window.pyodideModule.loadPyodide();
+      } else {
+        const scriptWasLoaded = await loadScript(
+          engines.pyodide.loader(version)
+        );
+        if (!scriptWasLoaded)
+          throw new Error(
+            'Could not reach "' + engines.pyodide.loader(version) + '"'
+          );
+        await window.loadPyodide({
+          indexURL: engines.pyodide.indexURL(version),
+        });
+      }
+      pythonRunner.loadedEngines[engine + '@' + version] = true;
       createPyodideRunner();
       break;
     }
@@ -418,6 +474,7 @@ export async function loadEngine(
         throw new Error(
           'Could not reach "' + engines.skulpt.library(version) + '"'
         );
+      pythonRunner.loadedEngines[engine + '@' + version] = true;
       await createSkulptRunner();
       break;
     }
@@ -428,6 +485,7 @@ export async function loadEngine(
         throw new Error(
           'Could not reach "' + engines.brython.loader(version) + '"'
         );
+      pythonRunner.loadedEngines[engine + '@' + version] = true;
       await createBrythonRunner();
       break;
     }
@@ -1020,9 +1078,11 @@ export async function loadEngines(engines) {
  * @throws {Error|PythonError} Invalid python engine | A python error
  */
 export async function runCode(code, userOptions = {}) {
-  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
+  const { use: specificEngine = pythonRunner.currentEngine, version = null } =
+    userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].runCode(
     code,
@@ -1037,9 +1097,11 @@ export async function runCode(code, userOptions = {}) {
  * @returns {any}
  */
 export async function getVariable(name, userOptions = {}) {
-  const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
+  const { use: specificEngine = pythonRunner.currentEngine, version = null } =
+    userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].getVariable(name);
 }
@@ -1059,12 +1121,14 @@ export async function getVariables(
 ) {
   const {
     use: specificEngine = pythonRunner.currentEngine,
+    version = null,
     includeValues = true,
     filter = null,
     onlyShowNewVariables = true,
   } = userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].getVariables(
     includeValues,
@@ -1083,7 +1147,8 @@ export async function getVariables(
 export async function setVariable(name, value, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].setVariable(
     name,
@@ -1100,7 +1165,8 @@ export async function setVariable(name, value, userOptions = {}) {
 export async function setVariables(variables, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].setVariables(
     variables
@@ -1116,7 +1182,8 @@ export async function setVariables(variables, userOptions = {}) {
 export async function clearVariable(name, userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].clearVariable(name);
 }
@@ -1129,7 +1196,8 @@ export async function clearVariable(name, userOptions = {}) {
 export async function clearVariables(userOptions = {}) {
   const { use: specificEngine = pythonRunner.currentEngine } = userOptions;
 
-  if (!hasEngine(specificEngine)) await loadEngine(specificEngine);
+  if (!hasEngine(specificEngine, version))
+    await loadEngine(specificEngine, { version });
 
   return await pythonRunner.loadedEngines[specificEngine].clearVariables();
 }
