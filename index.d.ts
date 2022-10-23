@@ -1,15 +1,17 @@
 /**
  * @function hasEngine
  * @param {Engine} engine
+ * @param {string} version
  * @returns {boolean}
  */
-export function hasEngine(engine: Engine): boolean;
+export function hasEngine(engine: Engine, version: string): boolean;
 /**
  * @function engineExists
  * @param {Engine} engine
+ * @param {string} version
  * @returns {boolean}
  */
-export function engineExists(engine: Engine): boolean;
+export function engineExists(engine: Engine, version?: string): boolean;
 /**
  * @function getOptions
  * @returns {Options}
@@ -25,7 +27,7 @@ export function setOptions(options: Options): void;
  * @function setEngine
  * @param {Engine} engine
  */
-export function setEngine(engine: Engine): Promise<boolean>;
+export function setEngine(engine: Engine, version?: any): Promise<boolean>;
 /**
  * @typedef {Object} PythonError
  * @property {number} columnNumber
@@ -54,8 +56,9 @@ export function interpretErrorMessage(error: any, code: string, engine: string):
  * @returns {boolean} If engine was loaded (or already loaded)
  * @throws {Error} If engine does not exist
  */
-export function loadEngine(engine?: Engine, { useEngine }?: {
+export function loadEngine(engine?: Engine, { useEngine, version }?: {
     useEngine?: boolean | undefined;
+    version?: any;
 }): boolean;
 /**
  * @async
@@ -160,8 +163,8 @@ export type Options = {
     pythonVersion?: number | undefined;
     loadVariablesBeforeRun?: boolean | undefined;
     storeVariablesAfterRun?: boolean | undefined;
-    onLoading?: ((engine: Engine) => void) | undefined;
-    onLoaded?: ((engine: Engine) => void) | undefined;
+    onLoading?: ((engine: Engine, version: string, isFirst: boolean) => void) | undefined;
+    onLoaded?: ((engine: Engine, version: string, isLast: boolean) => void) | undefined;
 };
 export type Variables = {
     [name: string]: any;

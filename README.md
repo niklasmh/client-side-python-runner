@@ -37,8 +37,8 @@ setOptions({
   pythonVersion: 3, // Preferred version
   loadVariablesBeforeRun: true,
   storeVariablesAfterRun: true,
-  onLoading: (engine) => {},
-  onLoaded: (engine) => {},
+  onLoading: (engine, version, isFirst) => {},
+  onLoaded: (engine, version, isLast) => {},
 });
 ```
 
@@ -260,8 +260,8 @@ function setOptions({
   pythonVersion = 3 as number, // Preferred version
   loadVariablesBeforeRun = true as boolean,
   storeVariablesAfterRun = true as boolean,
-  onLoading = () => {} as (engine: string) => void,
-  onLoaded = () => {} as (engine: string) => void,
+  onLoading = () => {} as (engine: string, version: string = null) => void,
+  onLoaded = () => {} as (engine: string, version: string = null) => void,
 });
 ```
 

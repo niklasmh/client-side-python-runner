@@ -48,8 +48,8 @@ const engines = {
  * @property {number=} pythonVersion
  * @property {boolean=} loadVariablesBeforeRun
  * @property {boolean=} storeVariablesAfterRun
- * @property {(engine: Engine, isFirst: boolean) => void=} onLoading
- * @property {(engine: Engine, isLast: boolean) => void=} onLoaded
+ * @property {(engine: Engine, version: string, isFirst: boolean) => void=} onLoading
+ * @property {(engine: Engine, version: string, isLast: boolean) => void=} onLoaded
  */
 const options = {
   output: console.log,
@@ -58,8 +58,8 @@ const options = {
   pythonVersion: 3,
   loadVariablesBeforeRun: true,
   storeVariablesAfterRun: true,
-  onLoading: (engine, isFirst) => {},
-  onLoaded: (engine, isLast) => {},
+  onLoading: (engine, version, isFirst) => {},
+  onLoaded: (engine, version, isLast) => {},
 };
 
 /**
@@ -506,6 +506,7 @@ export async function loadEngine(
   delete pythonRunner.loadingEngines[engine];
   pythonRunner.options.onLoaded(
     engine,
+    version,
     Object.keys(pythonRunner.loadingEngines).length === 0
   );
   return true;
