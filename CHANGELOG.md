@@ -1,3 +1,8 @@
+### Version 1.7.0
+
+- Add support for pyodide version >= 0.18.0 (had to use js-modules).
+- Fix engine versioning.
+
 ### Version 1.6.6
 
 - Add a general `turtleGraphics` option for Skulpt in `runCode`-options.
