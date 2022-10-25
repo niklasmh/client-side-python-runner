@@ -163,8 +163,8 @@ export type Options = {
     pythonVersion?: number | undefined;
     loadVariablesBeforeRun?: boolean | undefined;
     storeVariablesAfterRun?: boolean | undefined;
-    onLoading?: ((engine: Engine, version: string, isFirst: boolean) => void) | undefined;
-    onLoaded?: ((engine: Engine, version: string, isLast: boolean) => void) | undefined;
+    onLoading?: ((engine: Engine, isFirst: boolean) => void) | undefined;
+    onLoaded?: ((engine: Engine, isLast: boolean) => void) | undefined;
 };
 export type Variables = {
     [name: string]: any;
