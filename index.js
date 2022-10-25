@@ -428,7 +428,6 @@ export async function loadEngine(
   pythonRunner.loadingEngines[engine] = [];
   pythonRunner.options.onLoading(
     engine,
-    version,
     Object.keys(pythonRunner.loadingEngines).length === 1
   );
 

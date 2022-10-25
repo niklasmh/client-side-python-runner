@@ -37,8 +37,8 @@ setOptions({
   pythonVersion: 3, // Preferred version
   loadVariablesBeforeRun: true,
   storeVariablesAfterRun: true,
-  onLoading: (engine) => {},
-  onLoaded: (engine) => {},
+  onLoading: (engine, isFirst) => {},
+  onLoaded: (engine, isLast) => {},
 });
 ```
 
