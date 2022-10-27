@@ -1,3 +1,8 @@
+### Version 1.7.1
+
+- Fix types for versioning.
+- Fix undefined version-variables.
+
 ### Version 1.7.0
 
 - Add support for pyodide version >= 0.18.0 (had to use js-modules).

@@ -1,17 +1,17 @@
 /**
  * @function hasEngine
  * @param {Engine} engine
- * @param {string} version
+ * @param {string=} version
  * @returns {boolean}
  */
-export function hasEngine(engine: Engine, version: string): boolean;
+export function hasEngine(engine: Engine, version?: string | undefined): boolean;
 /**
  * @function engineExists
  * @param {Engine} engine
- * @param {string} version
+ * @param {string=} version
  * @returns {boolean}
  */
-export function engineExists(engine: Engine, version?: string): boolean;
+export function engineExists(engine: Engine, version?: string | undefined): boolean;
 /**
  * @function getOptions
  * @returns {Options}
@@ -26,8 +26,9 @@ export function setOptions(options: Options): void;
  * @async
  * @function setEngine
  * @param {Engine} engine
+ * @param {string=} version
  */
-export function setEngine(engine: Engine, version?: any): Promise<boolean>;
+export function setEngine(engine: Engine, version?: string | undefined): Promise<boolean>;
 /**
  * @typedef {Object} PythonError
  * @property {number} columnNumber
@@ -53,13 +54,14 @@ export function interpretErrorMessage(error: any, code: string, engine: string):
  * @async
  * @function loadEngine
  * @param {Engine} engine
+ * @param {{useEngine?: Engine, version?: string}=} userOptions
  * @returns {boolean} If engine was loaded (or already loaded)
  * @throws {Error} If engine does not exist
  */
 export function loadEngine(engine?: Engine, { useEngine, version }?: {
-    useEngine?: boolean | undefined;
-    version?: any;
-}): boolean;
+    useEngine?: Engine;
+    version?: string;
+} | undefined): boolean;
 /**
  * @async
  * @function loadEngines
@@ -69,30 +71,33 @@ export function loadEngines(engines: Engine[]): Promise<boolean[]>;
 /**
  * @async
  * @function runCode
- * @param {{use?: Engine}=} userOptions
+ * @param {{use?: Engine, version?: string}=} userOptions
  * @returns {any=} Last result from pyodide. (Not the other runners)
  * @throws {Error|PythonError} Invalid python engine | A python error
  */
 export function runCode(code: any, userOptions?: {
-    use?: Engine;
+    use?: Engine | undefined;
+    version?: string | undefined;
 } | undefined): any | undefined;
 /**
  * @async
  * @function getVariable
- * @param {{use?: Engine}=} userOptions
+ * @param {{use?: Engine, version?: string}=} userOptions
  * @returns {any}
  */
 export function getVariable(name: any, userOptions?: {
-    use?: Engine;
+    use?: Engine | undefined;
+    version?: string | undefined;
 } | undefined): any;
 /**
  * @async
  * @function getVariables
- * @param {{use?: Engine, includeValues?: boolean, filter?: null | (name) => boolean, onlyShowNewVariables?: boolean}=} userOptions
+ * @param {{use?: Engine, version?: string, includeValues?: boolean, filter?: null | (name) => boolean, onlyShowNewVariables?: boolean}=} userOptions
  * @returns {Variables|string[]}
  */
 export function getVariables(userOptions?: {
     use?: Engine | undefined;
+    version?: string | undefined;
     includeValues?: boolean | undefined;
     filter?: ((name: any) => boolean) | null | undefined;
     onlyShowNewVariables?: boolean | undefined;
@@ -102,36 +107,40 @@ export function getVariables(userOptions?: {
  * @function setVariable
  * @param {string} name
  * @param {any} value
- * @param {{use?: Engine}=} userOptions
+ * @param {{use?: Engine, version?: string}=} userOptions
  */
 export function setVariable(name: string, value: any, userOptions?: {
-    use?: Engine;
+    use?: Engine | undefined;
+    version?: string | undefined;
 } | undefined): Promise<any>;
 /**
  * @async
  * @function setVariables
  * @param {Variables} variables
- * @param {{use?: Engine}=} userOptions
+ * @param {{use?: Engine, version?: string}=} userOptions
  */
 export function setVariables(variables: Variables, userOptions?: {
-    use?: Engine;
+    use?: Engine | undefined;
+    version?: string | undefined;
 } | undefined): Promise<any>;
 /**
  * @async
  * @function clearVariable
  * @param {string} name
- * @param {{use?: Engine}=} userOptions
+ * @param {{use?: Engine, version?: string}=} userOptions
  */
 export function clearVariable(name: string, userOptions?: {
-    use?: Engine;
+    use?: Engine | undefined;
+    version?: string | undefined;
 } | undefined): Promise<any>;
 /**
  * @async
  * @function clearVariables
- * @param {{use?: Engine}=} userOptions
+ * @param {{use?: Engine, version?: string}=} userOptions
  */
 export function clearVariables(userOptions?: {
-    use?: Engine;
+    use?: Engine | undefined;
+    version?: string | undefined;
 } | undefined): Promise<any>;
 export default pythonRunner;
 export type PythonError = {

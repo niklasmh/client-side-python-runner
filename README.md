@@ -155,7 +155,7 @@ import { loadEngine } from 'client-side-python-runner';
 await loadEngine('pyodide');
 
 // You can specify engine version like this
-await loadEngine('pyodide', { version: '0.17.0' });
+await loadEngine('pyodide', { version: '0.21.3' });
 
 // After this, the window.pyodide is ready
 window.pyodide.runPython("print('I am using pyodide directly instead')");
@@ -223,7 +223,7 @@ Set the current engine and engine version.
 Signature:
 
 ```typescript
-async function setEngine(engine: string, version?: string);
+async function setEngine(engine: string, version: string = null);
 ```
 
 ### `async runCode`
@@ -237,6 +237,7 @@ async function runCode(
   code: string,
   options = {
     variables = {} as { [name: string]: any },
+    version = null as string,
     loadVariablesBeforeRun = true as boolean,
     storeVariablesAfterRun = true as boolean,
     use = currentEngine as string,
@@ -276,6 +277,7 @@ async function getVariable(
   name: string,
   options = {
     use = currentEngine as string,
+    version = null as string,
   }
 );
 ```
@@ -305,6 +307,7 @@ async function setVariable(
   value: any,
   options = {
     use = currentEngine as string,
+    version = null as string,
   }
 );
 ```
@@ -320,6 +323,7 @@ async function setVariables(
   },
   options = {
     use = currentEngine as string,
+    version = null as string,
   }
 );
 ```
@@ -333,6 +337,7 @@ async function clearVariable(
   name: string,
   options = {
     use = currentEngine as string,
+    version = null as string,
   }
 );
 ```
@@ -342,7 +347,12 @@ async function clearVariable(
 Signature:
 
 ```typescript
-async function clearVariables({ use = currentEngine as string });
+async function clearVariables(
+  options = {
+    use = currentEngine as string,
+    version = null as string,
+  }
+);
 ```
 
 ## Why I made this package
