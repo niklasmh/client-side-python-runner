@@ -1,6 +1,6 @@
 {
   "name": "client-side-python-runner",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "A client side Python runner wrapper",
   "main": "index.js",
   "types": "index.d.ts",
