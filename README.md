@@ -155,7 +155,7 @@ import { loadEngine } from 'client-side-python-runner';
 await loadEngine('pyodide');
 
 // You can specify engine version like this
-await loadEngine('pyodide', { version: '0.21.3' });
+await loadEngine('pyodide', { version: '0.23.4' });
 
 // After this, the window.pyodide is ready
 window.pyodide.runPython("print('I am using pyodide directly instead')");
@@ -192,7 +192,7 @@ List of all exported functions:
 
 ### `async loadEngine`
 
-Signature:
+Load an engine.
 
 ```typescript
 async function loadEngine(
@@ -204,23 +204,17 @@ async function loadEngine(
 );
 ```
 
-Description: Load an engine.
-
 ### `async loadEngines`
 
-Signature:
+Load multiple engines. Waits until all of them are loaded.
 
 ```typescript
 async function loadEngines(engines: string[]);
 ```
 
-Load multiple engines. Waits until all of them are loaded.
-
 ### `async setEngine`
 
 Set the current engine and engine version.
-
-Signature:
 
 ```typescript
 async function setEngine(engine: string, version: string = null);
@@ -229,8 +223,6 @@ async function setEngine(engine: string, version: string = null);
 ### `async runCode`
 
 Run Python code using the current engine (or default if not set). This function will also return the result of the last line if possible (e.g. if 'pyodide' is the current engine).
-
-Signature:
 
 ```typescript
 async function runCode(
@@ -251,7 +243,7 @@ Get all options.
 
 ### `setOptions`
 
-Signature:
+Set options. This will go in effect immediately.
 
 ```typescript
 function setOptions({
@@ -266,11 +258,7 @@ function setOptions({
 });
 ```
 
-Set options. This will go in effect immediately.
-
 ### `async getVariable`
-
-Signature:
 
 ```typescript
 async function getVariable(
@@ -283,8 +271,6 @@ async function getVariable(
 ```
 
 ### `async getVariables`
-
-Signature:
 
 ```typescript
 async function getVariables(
@@ -299,8 +285,6 @@ async function getVariables(
 
 ### `async setVariable`
 
-Signature:
-
 ```typescript
 async function setVariable(
   name: string,
@@ -313,8 +297,6 @@ async function setVariable(
 ```
 
 ### `async setVariables`
-
-Signature:
 
 ```typescript
 async function setVariables(
@@ -330,8 +312,6 @@ async function setVariables(
 
 ### `async clearVariable`
 
-Signature:
-
 ```typescript
 async function clearVariable(
   name: string,
@@ -343,8 +323,6 @@ async function clearVariable(
 ```
 
 ### `async clearVariables`
-
-Signature:
 
 ```typescript
 async function clearVariables(
@@ -412,9 +390,6 @@ Check out the [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Later
 
-- [x] Add TypeScript support.
-- [ ] Support files.
-- [ ] Include more Python runners.
 - [ ] Make it possible to run them offline (by building them into the project somehow).
 - [ ] Add portals between JavaScript and Python. Useful for executing functions outside the Python scope and the other way around (if possible).
 
