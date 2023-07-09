@@ -24,14 +24,14 @@ const engines = {
         ? `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.mjs`
         : `https://cdn.jsdelivr.net/pyodide/v${version}/full/pyodide.js`,
     indexURL: (version) => `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
-    versions: ['0.21.3', '0.18.1', '0.18.0', '0.17.0'],
+    versions: ['0.23.4', '0.21.3', '0.18.1', '0.18.0', '0.17.0'],
   },
   skulpt: {
     loader: (version) =>
       `https://cdn.jsdelivr.net/npm/skulpt@${version}/dist/skulpt.min.js`,
     library: (version) =>
       `https://cdn.jsdelivr.net/npm/skulpt@${version}/dist/skulpt-stdlib.js`,
-    versions: ['latest', '1.2.0', '1.0.0'],
+    versions: ['latest', '1.3.0', '1.2.0', '1.0.0'],
   },
   brython: {
     loader: (version) =>
@@ -141,10 +141,7 @@ export function hasEngine(engine, version) {
  * @param {string=} version
  * @returns {boolean}
  */
-export function engineExists(engine, version = null) {
-  if (version !== null) {
-    return engine in engines && engines[engine].versions.includes(version);
-  }
+export function engineExists(engine) {
   return engine in engines;
 }
 
@@ -393,7 +390,7 @@ export async function loadEngine(
   engine = pythonRunner.currentEngine,
   { useEngine = false, version = null } = {}
 ) {
-  if (!engineExists(engine, version)) {
+  if (!engineExists(engine)) {
     throw new Error(
       'Engine "' +
         engine +

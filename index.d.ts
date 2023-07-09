@@ -11,7 +11,7 @@ export function hasEngine(engine: Engine, version?: string | undefined): boolean
  * @param {string=} version
  * @returns {boolean}
  */
-export function engineExists(engine: Engine, version?: string | undefined): boolean;
+export function engineExists(engine: Engine): boolean;
 /**
  * @function getOptions
  * @returns {Options}
