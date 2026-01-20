@@ -4,6 +4,90 @@ Supported python runners so far: [Pyodide][pyodide], [Skulpt][skulpt], [Brython]
 
 Try it out [here](https://niklasmh.github.io/client-side-python-runner/).
 
+---
+
+## ⚠️ Important Update: Pyodide Has Evolved
+
+**The original tradeoffs that made this multi-engine wrapper necessary have largely been resolved by Pyodide itself.**
+
+When this package was created, different Python runners had critical limitations:
+
+- **Pyodide**: Full Python + packages, but **huge download size** (~100MB+) and **slow startup**
+- **Skulpt**: Fast to load, but missing libraries and features
+- **Brython**: Quick startup, but limited ecosystem
+
+**However, Pyodide has made massive improvements** that address these issues:
+
+### Size & Performance (SOLVED)
+
+- **Initial load reduced from ~100MB to 10-20MB** (v0.22.0+)
+- **Memory footprint**: Reduced from 1 GiB to 5 MiB initially, grows as needed (v0.22.0)
+- **Lazy loading**: Standard library modules load on demand (v0.23.0)
+- **pyodide-core variant**: Minimal build without packages for fastest startup
+- **Preloading**: Can load packages during bootstrap to save time
+- **Py-compiled builds**: Available for even faster loading (v0.23.3)
+
+### Input Handling (SOLVED)
+
+- **Full stdin control**: `loadPyodide({ stdin: callback })` support (v0.18.0+)
+- **Dynamic stream control**: `setStdin()`, `setStdout()`, `setStderr()` APIs (v0.22.0)
+- **Auto-EOF handling**: Precise control over input stream behavior (v0.22.1)
+- **Result**: Can now properly halt execution and wait for user input!
+
+### Sleep & Async Operations (SOLVED)
+
+- **Stack switching**: Experimental support added (v0.25.0)
+- **`time.sleep()` works properly**: No longer blocks the entire browser! (v0.28.0)
+  - Quote from changelog: _"time.sleep() will now stack switch if possible. This allows other events on the event loop to be processed during the sleep."_
+- **Top-level await**: Works everywhere
+- **Full asyncio support**: Complete event loop integration with WebLoop
+- **Result**: Python async/await and sleep() work as expected!
+
+### Other Major Improvements
+
+- **Keyboard interrupts**: Proper `KeyboardInterrupt` support with interrupt buffers (v0.19.0+)
+- **Package management**: `micropip` can install directly from PyPI
+- **File system options**: IDBFS (persistent), NODEFS, WORKERFS, etc. (v0.18.0+)
+- **Node.js support**: Works in Node environments (v0.18.1+)
+- **Python 3.12**: Latest Python features (v0.28.0+)
+- **Error handling**: Better stack traces and debugging
+
+### What This Means
+
+**For most use cases, you should use Pyodide directly** rather than this wrapper:
+
+```javascript
+// Modern Pyodide (2024+) is simple to use:
+import { loadPyodide } from 'pyodide';
+
+const pyodide = await loadPyodide({
+  indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.29.1/full/',
+  packages: ['numpy', 'pandas'], // Preload if needed
+  stdin: () => prompt('Input: '),
+  stdout: (msg) => console.log(msg),
+});
+
+await pyodide.runPythonAsync(`
+import asyncio
+import time
+
+print("Starting...")
+time.sleep(2)  # This works now!
+await asyncio.sleep(1)  # This too!
+print("Done!")
+`);
+```
+
+**This package is still useful if you:**
+
+- Need to support legacy Skulpt/Brython code
+- Want a unified API across different engines
+- Are maintaining an older project
+
+**For new projects**, consider using Pyodide directly via their official package.
+
+---
+
 ```bash
 npm i client-side-python-runner --save
 # OR
