@@ -34,6 +34,44 @@ When this package was created, different Python runners had critical limitations
 - **Auto-EOF handling**: Precise control over input stream behavior (v0.22.1)
 - **Result**: Can now properly halt execution and wait for user input!
 
+### Custom Input Dialogs
+
+Pyodide now supports **custom async input dialogs** instead of browser's `prompt()`:
+
+```javascript
+// Expose your custom async input function
+globalThis.myCustomInput = async (promptText) => {
+  // Show your custom dialog, return Promise<string>
+  return await showMyFancyDialog(promptText);
+};
+
+// In Python, use it with asyncio
+await pyodide.runPythonAsync(`
+from js import myCustomInput
+import asyncio
+
+async def get_user_data():
+    name = await myCustomInput("Enter your name:")
+    print(f"Hello, {name}!")
+
+    await asyncio.sleep(1)
+
+    age = await myCustomInput("Enter your age:")
+    print(f"You are {age} years old!")
+
+await get_user_data()
+`);
+```
+
+**Key benefits:**
+
+- ✅ Beautiful custom UI instead of browser's native `prompt()`
+- ✅ Works seamlessly with `asyncio.sleep()` and async operations
+- ✅ Full control over styling and behavior
+- ✅ Non-blocking - browser stays responsive
+
+**Note:** Synchronous `input()` still requires browser's `prompt()` or similar blocking mechanism. For custom dialogs, use the async pattern above.
+
 ### Sleep & Async Operations (SOLVED)
 
 - **Stack switching**: Experimental support added (v0.25.0)
@@ -57,7 +95,6 @@ When this package was created, different Python runners had critical limitations
 **For most use cases, you should use Pyodide directly** rather than this wrapper:
 
 ```javascript
-// Modern Pyodide (2024+) is simple to use:
 import { loadPyodide } from 'pyodide';
 
 const pyodide = await loadPyodide({
